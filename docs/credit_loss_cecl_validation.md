@@ -1,0 +1,230 @@
+# Small-business credit loss: charge-off hazard, severity and lifetime expected loss, with validation
+
+Public SBA 7(a) loan data, as of 2026-09-30. Analysis plan written and hashed before any model was fitted
+(`docs/credit_loss_plan.md`; hash in `reports/p3/plan_hash.json`); every change made afterwards is listed with
+its reason in `docs/credit_loss_deviations.md` (D1–D4). The developer is also the validator, so this is a self-administered
+review in the structure of a model validation report, not an independent validation.
+
+## 1. Purpose and scope
+
+An allowance for credit losses under CECL needs, for every loan on the books, a lifetime expected loss: when the
+loan might default, how much would be lost, and how long it stays on the books. This study builds those pieces on
+public data and asks of each one what a model risk reviewer asks: is the number usable, under which conditions does
+it fail, and what would detect the failure?
+
+- **Portfolio.** SBA 7(a) term loans: small-business loans made by banks and other lenders with a partial SBA
+  guarantee. They are not a bank's own portfolio and carry no bureau or delinquency data.
+- **Event.** SBA's charge-off of the loan, which follows default and liquidation. The hazard therefore times
+  write-off, not default.
+- **Outputs.** A monthly charge-off hazard and a competing payoff hazard (champion and challengers), a severity model
+  (charge-off amount over the original loan amount), a rolling 24-month backtest, and the lifetime expected loss of
+  the loans active at 2026-09 under the Federal Reserve's 2026 supervisory scenarios.
+
+## 2. What the data record
+
+The files hold one row per loan: amount, SBA guarantee, approval and first-disbursement dates, processing method,
+business age and type, sector, state, term, final status (paid in full, charged off, active), payoff date,
+charge-off date and charge-off amount (`reports/p3/data_profile.json`).
+
+| Step | Loans |
+|---|---|
+| Rows in the three files (FY2000 onward) | 1,639,728 |
+| After exact duplicates | 1,637,918 |
+| Term loans, final status paid / charged off / active, disbursed, 50 states and DC | 994,992 |
+| At risk in the window 2006-01..2026-09 | 919,479 (115,117 charged off, 572,070 paid off, 232,292 active) |
+
+Four properties of the data decide what can be modelled. Each is in the findings log (§12).
+
+- **The recorded term is revised after a loan runs into trouble (L1).** 90% of charged-off loans have a term that is
+  not a multiple of 12, against 10% of loans cancelled before disbursement (which keep their approved terms), 16% of
+  active and 18% of paid-off loans; 120-month loans show a charge-off share of 0.4% against 12.5% overall
+  (`term_field_check.csv`, `term_charge_off_share_by_term.csv`). The term therefore carries information about the
+  outcome. In the first fit it gave LightGBM an out-of-time AUC of 0.935 (`reports/p3/first_fit/`); without it, 0.737.
+  The term is not used as a predictor or for censoring (deviation D1).
+- **Payoff dates before mid-2005 are bulk-stamped.** 45,770 payoffs in the population are dated 2005-05, against
+  about 2,600 a month from 2005-08. The risk window therefore starts in 2006-01, with loans disbursed earlier
+  entering at their current age.
+- **Charge-off is an administrative event (L7).** It comes a median of about four years after first disbursement
+  and partly in batches: 1,935 charge-offs in 2008-05, 1,340 in 2015-08 and 505 in 2019-02, each more than twice the
+  surrounding 13-month median (`chargeoff_batch_months.csv`).
+- **Two fields change meaning across approval eras (L9).** The interest rate is missing for 94.5% of loans approved
+  FY2000–FY2009 and the collateral flag's share of "Y" rises from 15% to 82–89%. Neither is used.
+
+The annual charge-off rate of loans at risk peaks at 7.4% in 2010 and runs at 1.0–1.3% a year from 2019 to 2025
+(`annual_chargeoffs.csv`).
+
+## 3. Models
+
+Unit: loan-month, 52,141,481 at risk. All charge-off and payoff months are kept with 5% of the other months; the
+logit intercept is corrected by log 0.05 and evaluation weights non-events by 20.
+
+| Model | Charge-off and payoff hazards |
+|---|---|
+| M0 lookup | Hazard by 12-month loan-age band × processing group |
+| M1 logit (champion) | Cause-specific discrete-time logit: loan-age spline, log amount, guarantee share, processing group, business age and type, sector, franchise, month of year, state effects; charge-off adds the 4-quarter change in unemployment and the BBB–Treasury spread, lagged 12 months (lag chosen on the validation months from 0, 12, 24); payoff adds the prime rate and its 4-quarter change |
+| M2 LightGBM | Same information; monotone increasing in the two macro terms for charge-off |
+| Severity | S0 lookup (age band × processing), S1 fractional logit, S2 LightGBM, on charge-off amount ÷ original amount |
+
+Expected loss of loan *i* in month *t* is S(t−1) × h_charge-off(t) × severity(t) × original amount, with S the
+survival from both causes. The lender's share multiplies by one minus the guarantee share (7(a) losses are shared
+pro rata). Hold-out states (MA, NJ, WI, MN, SC, KY, OK, AZ, WA) never enter a fit.
+
+## 4. Does the challenger earn its complexity?
+
+Fit 2006–2017, validation 2018–2019 (`eval_validation.csv`); then refit on 2006–2019 and score 2020-01..2026-09
+(`eval_hazard.csv`).
+
+| Charge-off hazard | AUC, in sample | AUC, out of time | Predicted ÷ actual, out of time |
+|---|---|---|---|
+| M0 lookup | 0.708 | 0.666 | 2.25 |
+| M1 logit | 0.747 | 0.681 | 2.79 |
+| M2 LightGBM | 0.821 | 0.737 | 2.43 |
+
+- **Champion rule.** M2 replaces M1 only if it lowers the validation log loss by more than 1% and its validation
+  predicted ÷ actual is within 0.90–1.10. M2 lowers log loss by 5.0% but over-predicts the validation months by
+  1.66, so M1 stays champion (`champion.json`).
+- **What the rule shows.** LightGBM ranks loans better, but every model over-predicts the level of charge-offs
+  after 2019 by a factor of more than two. Ranking is not the problem; the level is.
+- **Payoff hazard.** Out of time, predicted ÷ actual is 1.12 for M1, 1.06 for M2 and 0.88 for M0 (AUC 0.66–0.68).
+
+## 5. Did the loans change? Vintage, not only the economy
+
+Predicted ÷ actual charge-offs of the 2006–2019 champion, by approval cohort, in sample (`vintage_pred_vs_actual.csv`):
+
+| Approval years | Predicted ÷ actual |
+|---|---|
+| FY2000–FY2005 | 0.82–1.09 |
+| FY2006–FY2007 | 0.77, 0.69 |
+| FY2009–FY2018 | 1.28–2.34 |
+
+The model is calibrated overall in sample (1.00) because it averages a crisis whose losses came from loans approved
+in FY2005–FY2008 with a decade of much safer loans. Its unemployment term was estimated on that one crisis. Adding
+approval-era effects (deviation D4; `m1v_co_coefficients.csv`) halves the unemployment coefficient, from 0.215 to
+0.103 per point of 4-quarter change (standard errors 0.004), and the era effects are large: relative to FY2000–04,
++0.18 for FY2005–08, −0.87 for FY2009–13 and −1.24 for FY2014–19 in log odds. About half of what the champion
+reads as sensitivity to unemployment is the quality of the loans that happened to be on the books when unemployment
+rose (L2).
+
+## 6. Rolling backtest: does knowing the macro path help?
+
+At each December origin the models are refitted on data to that date and project 24-month charge-off dollars for
+the book at risk, with the realised macro path and with macro held at its value at the origin
+(`backtest_rolling.csv`). Predicted ÷ actual dollars, realised macro:
+
+| Origin | Book (loans) | Actual 24-month charge-offs | M0 | M1 | M1r | M1v |
+|---|---|---|---|---|---|---|
+| 2009-12 | 214,170 | $2.40bn | 0.94 | **0.98** | 1.04 | 0.94 |
+| 2011-12 | 208,575 | $1.17bn | 2.41 | 1.77 | 1.79 | 1.51 |
+| 2013-12 | 199,027 | $3.01bn | 0.90 | 0.56 | 0.37 | 0.35 |
+| 2015-12 | 199,741 | $2.35bn | 1.53 | 1.09 | 1.08 | 0.64 |
+| 2017-12 | 208,307 | $1.25bn | 2.97 | 2.31 | 1.63 | 1.13 |
+| 2019-12 | 208,585 | $0.93bn | 3.88 | 7.24 | 3.84 | 2.14 |
+| 2021-12 | 205,266 | $1.22bn | 3.10 | 1.94 | 0.80 | 0.90 |
+| 2023-12 | 200,627 | $1.30bn | 2.92 | 2.00 | 1.39 | 0.82 |
+| Within ±25% | | | 2 of 8 | 2 of 8 | 3 of 8 | 4 of 8 |
+
+M1r is the champion scaled by actual ÷ predicted charge-offs of the previous 24 months; M1v adds approval-era
+effects. The plan's pass rule (within ±25% at 6 or more of 8 origins) is not met by any model
+(`backtest_summary.json`). The 2013 origin is pulled down by the 2015 write-off batch (§2).
+
+**The macro path rarely matters (L4).** Realised and held-at-origin forecasts of the champion differ by less than 3%
+at six of eight origins. The exceptions are 2009 (realised 0.98 against 1.23 held, the one origin where the path
+helps) and 2019, where the path makes the forecast more than twice as wrong (§7).
+
+## 7. When policy breaks the link: 2020–2021
+
+From the 2019-12 origin, charge-off dollars in 2020-04..2021-12 were $0.82bn. The champion with the realised macro
+path predicted 7.7 times that; with macro held at 2019-12, 3.1 times; with era effects, 2.2 and 1.5 times
+(`pandemic_check.json`, `backtest_rolling_monthly.csv`). Unemployment rose by 9.2 points in a quarter (quarterly averages, 2020Q1 to Q2) while SBA made
+borrowers' loan payments for several months under the CARES Act, so the historical link between unemployment and
+write-offs did not hold (L3). The plan's rule (record a finding above 1.25) is met. A macro-driven loss model needs
+an explicit overlay, or its macro terms switched off, when government support changes borrowers' payments.
+
+## 8. Severity
+
+Charge-off dollars over original amount, by charge-off year, range from 0.58 (2017–2019) to 0.70 (2010)
+(`annual_chargeoffs.csv`). Out of time, the fractional logit predicts total charge-off dollars within 2%
+(predicted ÷ actual 1.02, mean absolute error 0.17 per loan; S0 1.06, S2 0.98; `eval_severity.csv`). Severity
+depends mainly on the loan's age at charge-off and its guarantee share; its unemployment coefficient is −0.02
+(`s1_severity_coefficients.csv`). The difference between scenarios therefore comes almost entirely from the
+charge-off hazard. Severity is measured against the original amount because the data have no balances (L8).
+
+## 9. Lifetime expected loss at 2026-09-30
+
+Book: 232,292 active loans, $162.2bn approved, $128.2bn estimated outstanding (level-payment schedule from the
+recorded rate and term). Final models fitted on 2006-01..2026-09. Horizon: each loan's remaining recorded term (at
+least 12 months). Scenarios: Fed 2026 baseline and severely adverse from their 2026Q1 start to 2029Q1, then
+reversion over four quarters to the 2006–2025 average (deviation D3). Lifetime loss over estimated balance
+(`cecl_allowance.csv`):
+
+| Model | Baseline | Severely adverse | Severe − baseline |
+|---|---|---|---|
+| M1v logit + approval eras | 3.4% | 4.1% | +0.7 pt |
+| M1r logit, trailing recalibration (factor 0.81) | 4.6% | 6.9% | +2.2 pt |
+| M1 logit (champion) | 5.7% | 8.5% | +2.7 pt |
+| M2 LightGBM | 6.6% | 9.0% | +2.4 pt |
+| M0 lookup (no macro) | 9.9% | 9.9% | 0 |
+
+- **Model choice moves the allowance more than the scenario does (L5).** Across the four models with macro terms
+  the baseline estimate runs from 3.4% to 6.6% of balance, a spread of 3.3 points; the severely adverse scenario
+  adds 0.7 to 2.7 points. For comparison, the rolling backtest error of the best of them (M1v) is a factor of 1.5
+  on a typical origin (mean absolute log ratio 0.39).
+- **How much the scenario matters is itself a model choice.** M1, whose unemployment coefficient carries cohort
+  quality (§5), adds 2.7 points under the severely adverse path; M1v adds 0.7.
+- **Lender's share.** Losses are shared pro rata with SBA, so the lender's retained loss is the same percentage of
+  its retained balance (M1v baseline $1.03bn of $4.32bn in total).
+- **Horizon.** Allowing 24 months beyond the recorded term for charge-offs posted after maturity adds 0.25 points
+  (M1v) to 0.46 points (M1) under the baseline.
+- **Segments.** Express loans carry the highest estimated loss (M1v baseline 4.4% of balance against 3.4% for
+  Preferred Lenders loans; `cecl_by_segment.csv`).
+
+## 10. Monitoring: drift statistics against outcomes
+
+The population stability index of the book's 24-month charge-off probability between successive origins is 0.02
+between 2015-12 and 2017-12, while the champion's 2017-12 forecast turned out 2.3 times actual; it is above 2 only
+across the pandemic origins, where it reacts to the macro inputs rather than to the loans (`backtest_psi.csv`).
+As in the valuation study, drift statistics on inputs and scores did not flag the error that mattered (L6). An
+outcome trigger is proposed: review the model when the trailing 24-month predicted ÷ actual charge-offs leaves
+0.80–1.25.
+
+## 11. Remediation candidates for the vintage finding
+
+Both candidates and their rule were written down before they were run (deviation D4).
+
+| Candidate | Out of time, excluding 2020-04..2021-12 (rule 0.80–1.25) | Rolling backtest within ±25% (rule ≥ 6 of 8) | Result |
+|---|---|---|---|
+| M1v: approval-era effects | 0.74 | 4 of 8 | not met |
+| M1r: trailing 24-month recalibration | 0.93 | 3 of 8 | not met |
+
+Neither candidate meets the rule (`remediation_eval.csv`), so the vintage finding stays open. M1v has the smallest
+typical backtest error and halves the macro sensitivity; M1r is the simplest control to run each quarter. Both are
+reported alongside the champion rather than replacing it.
+
+## 12. Findings log
+
+| # | Severity | Status | Finding | Use limit or remediation |
+|---|---|---|---|---|
+| L1 | High | Closed | Recorded term revised after default; any term-based feature leaks the outcome (challenger AUC 0.935 with it, 0.737 without) | Term not used as a predictor or for censoring |
+| L2 | High | Open | Cohort quality is confounded with macro sensitivity: in-sample predicted ÷ actual 0.69–0.77 for FY2006–07 loans and 1.28–2.34 for FY2009–18; out of time 2.8 | Era effects halve the unemployment coefficient; neither candidate meets the pre-set rule (§11) |
+| L3 | High | Open | Payment relief in 2020–21: 7.7-fold over-prediction with the realised macro path | Overlay or macro terms off when government support changes payments |
+| L4 | Medium | Open | The macro path changes 24-month forecasts by less than 3% at six of eight origins; helps once (2009), hurts once (2019) | Scenario-conditioned forecasts are assumptions more than estimates |
+| L5 | Medium | Open | Model choice moves the lifetime estimate (3.4%–6.6% of balance, baseline) more than the scenario (+0.7 to +2.7 points) | Report the allowance as a range across models, not as one model's number |
+| L6 | Medium | Open | PSI 0.02 while the forecast was 2.3 times actual (2017) | Outcome trigger on 24-month predicted ÷ actual |
+| L7 | Medium | Info | Charge-off timing is administrative: four-year median lag, batches of up to 1,935 loans in a month | Read monthly backtests with the batches in view |
+| L8 | Low | Open | Severity measured on original amount, not balance | Needs balance data |
+| L9 | Low | Info | Interest rate missing FY2000–09; collateral flag recording changes | Not used |
+
+## 13. Use limits and limitations
+
+- **Use.** The models rank loans by charge-off risk with modest discrimination (out-of-time AUC 0.68–0.74). Their
+  level must be recalibrated or bounded before it enters an allowance, and their scenario sensitivity should be
+  read as a model assumption.
+- **Not tested.** Default timing, delinquency, balances and recoveries are not in the data; the guarantee is assumed
+  to share losses pro rata; the book is SBA-guaranteed small-business lending, not a bank's own portfolio.
+- **Data window.** One full credit cycle (2008–2011) and one policy-distorted shock (2020–21) are in the data.
+
+## Reproduce
+
+Everything here runs from public data: `scripts/00_download_sba.sh` (SBA 7(a) files and the Fed 2026 scenarios),
+then scripts 40–44 in order (about an hour on a 32-core machine). The aggregate tables behind every number are in
+`reports/p3/`.

@@ -1,0 +1,10 @@
+{
+  "window": "2020-04..2021-12",
+  "origin": "2019-12",
+  "pred_dollars": 6337705671.404984,
+  "actual_dollars": 824179183.73,
+  "ratio": 7.689718202687837,
+  "pred_n": 24829.00281269993,
+  "actual_n": 3776,
+  "finding_rule": "record a finding if ratio > 1.25"
+}

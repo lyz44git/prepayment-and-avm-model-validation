@@ -1,0 +1,7 @@
+{
+  "lag_months": 12,
+  "m2_logloss_gain_vs_m1": 0.05028343819302339,
+  "m2_validation_pred_over_actual": 1.661167732816362,
+  "rule": "M2 only if validation log-loss gain > 1% and predicted/actual within 0.90-1.10",
+  "champion": "M1 logit"
+}

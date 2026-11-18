@@ -18,7 +18,7 @@ from matplotlib.patches import FancyBboxPatch
 HALO = [patheffects.withStroke(linewidth=3, foreground="white")]
 
 ROOT = Path(__file__).resolve().parents[1]
-P1, P2, REM = "reports/p1/", "reports/p2/", "reports/p1/remediation/"
+P1, P2, REM, P3 = "reports/p1/", "reports/p2/", "reports/p1/remediation/", "reports/p3/"
 
 INK, INK2, MUTED, GRID = "#1d232b", "#4b5563", "#7b8490", "#e9e6df"
 NAVY, BLUE, LIGHT, PALE, GREY, ORANGE, OSOFT = "#1f3b5c", "#3f78b0", "#a9c4de", "#dfe6ee", "#9aa3ad", "#e07b39", "#f6d9c4"

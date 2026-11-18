@@ -1,0 +1,9 @@
+{
+  "loan_months": 52141481,
+  "lm_rows": 52141481,
+  "chargeoff_months": 115117,
+  "payoff_months": 572070,
+  "kept_share": 0.04998,
+  "sample_rows": 3258400,
+  "loans_in_window": 919479
+}

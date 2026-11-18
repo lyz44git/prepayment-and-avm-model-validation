@@ -1,0 +1,6 @@
+{
+  "plan": "docs/credit_loss_plan.md",
+  "sha256": "dfda045b00c2af381bfdd4c97150c8df8b13098a90dbea8db6055ed34efb6e47",
+  "recorded_at": "2026-11-18T12:49:56",
+  "note": "recorded before any model was fitted; the model script checks this hash before fitting"
+}

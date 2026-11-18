@@ -1,0 +1,62 @@
+{
+  "rows_all_files": 1639728,
+  "rows_after_exact_duplicates": 1637918,
+  "term_loans": 1160598,
+  "final_status_pif_co_active": 1011202,
+  "population": 994992,
+  "in_risk_window": 919479,
+  "event_before_or_at_disbursement_month": 1344,
+  "by_status_in_window": {
+    "co": 115117,
+    "active": 232292,
+    "pif": 572070
+  },
+  "coverage_by_era": [
+    {
+      "era": "FY2000-09",
+      "loans": 420022,
+      "rate_missing": 0.945,
+      "collateral_y": 0.147,
+      "business_age_unknown": 0.027,
+      "naics_missing": 0.038,
+      "median_amount": 100000.0,
+      "mean_guarantee_share": 0.691
+    },
+    {
+      "era": "FY2010-19",
+      "loans": 330858,
+      "rate_missing": 0.0,
+      "collateral_y": 0.819,
+      "business_age_unknown": 0.078,
+      "naics_missing": 0.0,
+      "median_amount": 216000.0,
+      "mean_guarantee_share": 0.709
+    },
+    {
+      "era": "FY2020-26",
+      "loans": 244112,
+      "rate_missing": 0.0,
+      "collateral_y": 0.893,
+      "business_age_unknown": 0.009,
+      "naics_missing": 0.0,
+      "median_amount": 315000.0,
+      "mean_guarantee_share": 0.748
+    }
+  ],
+  "payoff_dates_2005_05": 45770,
+  "payoff_dates_per_month_2005_08_to_2006_12": 2643,
+  "chargeoff_amount_over_approval_quantiles": [
+    0.334,
+    0.54,
+    0.756,
+    0.903,
+    0.98
+  ],
+  "months_disbursement_to_chargeoff_quantiles": [
+    23.0,
+    34.0,
+    51.0,
+    77.0,
+    110.0
+  ]
+}

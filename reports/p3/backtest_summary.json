@@ -1,0 +1,31 @@
+{
+  "pass_rule": "realised-macro 24-month dollar forecast within +/-25% of actual at >= 6 of 8 origins",
+  "M1": {
+    "origins": 8,
+    "within_25pct": 2,
+    "passed": false,
+    "median_dollar_ratio": 1.853675943153882,
+    "mean_abs_log_ratio": 0.6791833536628935
+  },
+  "M1v": {
+    "origins": 8,
+    "within_25pct": 4,
+    "passed": false,
+    "median_dollar_ratio": 0.9209196626539646,
+    "mean_abs_log_ratio": 0.3939534627169455
+  },
+  "M1r": {
+    "origins": 8,
+    "within_25pct": 3,
+    "passed": false,
+    "median_dollar_ratio": 1.2357556900057283,
+    "mean_abs_log_ratio": 0.5088602032670166
+  },
+  "M0": {
+    "origins": 8,
+    "within_25pct": 2,
+    "passed": false,
+    "median_dollar_ratio": 2.666422608036918,
+    "mean_abs_log_ratio": 0.7649530908679774
+  }
+}

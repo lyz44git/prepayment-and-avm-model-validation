@@ -11,7 +11,7 @@ pydantic>=2.10
 httpx>=0.28
 pytest>=8.3
 
-# needed only to re-estimate the models on the licensed data
+# needed to re-estimate the models (credit loss: public SBA data; prepayment and valuation: licensed data)
 duckdb>=1.5.2
 scikit-learn>=1.6.1
 shap>=0.54.1
