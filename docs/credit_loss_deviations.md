@@ -74,3 +74,76 @@ with no rule attached: the change in the unemployment coefficient when era effec
 Implementation note added after the first M1v run: loans approved in October–December 2019 (FY2020) gave the
 FY2020+ era 3,080 loan-months and no charge-offs in the 2006–2019 fit, and a separated coefficient (−10.3, s.e. 177).
 An era now gets its own effect only with at least 50 charge-offs in the fit; later loans take the latest such era.
+
+## D5. Second remediation round, written before it was run (2026-11-18, after D4 results)
+
+**Evidence.** Neither D4 candidate meets its rule. M1v (approval eras) has the smallest typical backtest error but
+misses at the 2011, 2013, 2015 and 2019 origins; M1r (recalibration) fixes the out-of-time level but not the
+origins. Two mechanisms are not in any model so far:
+
+- **Default pipeline.** Charge-off follows default by one to three years (liquidation). After a downturn, loans that
+  defaulted keep being written off while unemployment is already falling, which no current-macro term captures. The
+  2013 origin (24-month charge-offs in 2014–2015, including the largest dollar year of the window) is the clearest
+  case: all models under-predict it (0.35–0.56) except the lookup, which carries crisis-era rates.
+- **Payment relief.** From 2020-04 to 2021-09 SBA made the scheduled payments of 7(a) borrowers in regular servicing
+  (CARES Act §1112 and its 2021 extension), so the unemployment shock of 2020 did not reach charge-offs.
+
+**Candidates (all keep the approval-era effects of M1v).**
+- **R2a.** M1v scaled by the trailing 24-month actual ÷ predicted (as M1r), capped to [0.25, 4].
+- **R2b.** M1v plus a downturn-exposure term: the largest 4-quarter rise in unemployment dated between
+  max(first disbursement, t − L − 36) and t − L, floored at 0 (L is the charge-off lag, 12 months). The 36-month
+  window is fixed now and not tuned.
+- **R2c.** R2b scaled as in R2a.
+
+**Relief overlay O1, applied to every model and reported beside the unadjusted results.** In the quarterly macro
+series, the unemployment rate and the BBB spread for 2020Q2–2021Q3 are replaced by their 2020Q1 values before the
+4-quarter changes are computed: the relief window is treated as one in which the shock did not reach borrowers.
+It changes the inputs of fits and forecasts from 2020-04 on, so it affects the 2019, 2021 and 2023 origins, the
+out-of-time scores and the final fit. It is a documented qualitative adjustment, not an estimated effect.
+
+**Rules (unchanged from D4).** (i) Out-of-time predicted ÷ actual for 2020-01..2026-09 excluding 2020-04..2021-12
+within 0.80–1.25; (ii) rolling 24-month dollar forecasts with realised macro (with O1) within ±25% of actual at 6 or
+more of the 8 origins. **Adoption.** The candidate meeting both rules with the most origins inside ±25% (ties: the
+lower mean absolute log ratio) replaces M1 for the allowance; if none meets both, the vintage finding stays open and
+the best candidate is reported as the leading challenger. Results without O1 are reported for every candidate.
+
+**D5 results (recorded 2026-11-18 before D6 was written).** No candidate meets both rules (`r2_summary.json`). With
+O1, M1v is at 0.81 out of time (rule i met) and 4 of 8 origins; R2a reaches 5 of 8 but 0.73 out of time; the
+downturn-exposure term (R2b, R2c) does not help. The remaining misses alternate in sign at the 2011, 2013 and 2015
+origins (about 1.5, 0.3 and 0.7 times actual): 24-month charge-offs of the book were $1.17bn after 2011-12 and
+$3.01bn after 2013-12, during an expansion, when SBA wrote off the crisis-era loans it had been liquidating.
+
+## D6. Lifetime-to-date backtest, written before it was run (2026-11-18)
+
+**Why.** The allowance is a lifetime quantity, and the 24-month test is dominated by when SBA completes write-offs.
+This test asks the question the allowance depends on: did each origin's book eventually lose what the model said?
+It is added after the 24-month test failed and does not replace it; the 24-month failure stays in the findings log.
+
+**Test.** At each origin T from 2009-12 to 2019-12 (six origins, each with at least 81 months of outcomes), models
+fitted on data to T project the book at T month by month to 2026-09 with the realised macro path (with O1); the
+prediction is compared with the actual charge-off dollars of that book from T+1 to 2026-09. Models: M0, M1, M1v, R2a
+(M1v scaled at the origin), R2b.
+
+**Rule.** Within ±25% of actual dollars at 5 or more of the 6 origins. **Adoption for the allowance.** A candidate
+that meets this rule and rule (i) of D4/D5 is adopted for the lifetime allowance, with use limited to lifetime loss:
+not for 24-month or quarterly charge-off forecasts, which fail rule (ii). If several qualify: most origins inside
+±25%, then the lower mean absolute log ratio.
+
+**D6 results (2026-11-18).** No model meets the lifetime rule (`r3_summary.json`), so none is adopted under it.
+Lifetime-to-date predicted ÷ actual dollars by origin (`r3_lifetime_backtest.csv`):
+
+| Origin | M0 lookup | M1 | M1v (+O1) | R2a (+O1) | R2b (+O1) |
+|---|---|---|---|---|---|
+| 2009-12 | 0.55 | 0.39 | 0.40 | 0.42 | 0.96 |
+| 2011-12 | 0.93 | 0.69 | 0.57 | 0.58 | 0.52 |
+| 2013-12 | 1.01 | 0.65 | 0.38 | 0.30 | 0.37 |
+| 2015-12 | 2.54 | 1.81 | 0.97 | 1.19 | 1.16 |
+| 2017-12 | 3.41 | 2.47 | 1.11 | 1.14 | 1.22 |
+| 2019-12 | 3.14 | 2.24 | 1.03 | 0.94 | 1.09 |
+
+From the 2015 origin on, when the fit covers the crisis and the recovery, all three remediated candidates are within
+±25% at every origin; fitted on four to eight years (2009–2013 origins), the logits under-predict in 11 of 12
+model-origin pairs (R2b at 2009 is the exception). **Validator's
+recommendation (outside the pre-set adoption rule, labelled as such):** use M1v with O1 for the lifetime allowance
+only when it is fitted on at least one full credit cycle, report the range across M1v, R2a and R2b, and do not use it
+for 24-month or quarterly charge-off forecasts. The vintage finding stays open.

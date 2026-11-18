@@ -3,9 +3,10 @@
 [![tests](https://github.com/lyz44git/prepayment-and-avm-model-validation/actions/workflows/tests.yml/badge.svg)](https://github.com/lyz44git/prepayment-and-avm-model-validation/actions/workflows/tests.yml)
 
 **A credit-loss allowance multiplies three model outputs: when a loan is written off and how much is lost, how long
-it stays on the books, and what the collateral behind it is worth. Reviewed one by one, the loss model over-predicted
-post-2019 charge-offs more than two-fold because it read safer loans as a better economy, the prepayment
-challenger's edge vanished out of time, and one vendor's home values sat 32% below sale prices.**
+it stays on the books, and what the collateral behind it is worth. Reviewed one by one, the loss model at first over-predicted
+post-2019 charge-offs more than two-fold because it read safer loans as a better economy (the remediated model gets
+lifetime losses within 25% once it has seen a full cycle), the prepayment challenger's edge vanished out of time, and
+one vendor's home values sat 32% below sale prices.**
 
 An allowance for credit losses under CECL asks, for every loan on the books, how much will be lost over its life.
 The answer multiplies three things a model has to supply: the timing and size of losses (credit loss), how long the
@@ -26,7 +27,7 @@ also the validator), so it is not independent in the SR 11-7 sense. What carries
 
 | Input to lifetime loss | Study | Data | Question a validator asks | Use limit found |
 |---|---|---|---|---|
-| When loans are written off, and how much is lost | Credit loss: charge-off hazard, severity, lifetime expected loss | SBA 7(a), 919,479 loans, 2006–2026 | Does the level hold out of time and under scenarios? | Rank-orders risk; level and scenario sensitivity need recalibration and a range |
+| When loans are written off, and how much is lost | Credit loss: charge-off hazard, severity, lifetime expected loss | SBA 7(a), 919,479 loans, 2006–2026 | Does the level hold out of time and under scenarios? | Lifetime losses only, fitted on a full cycle; report a range; not for 24-month forecasts |
 | How long loans stay on the books | Prepayment: competing-risk hazard | Licensed records, 22.9M property-months, 2022–2025 | Does the champion hold out of time, out of state and under stress? | Sale side usable; refinance under-predicted; no house-price stress use |
 | What the collateral is worth | Home valuation: vendor models vs. challengers | Licensed records, 2.4M sales, 2022–2025 | Are the vendor values accurate, current and even-handed? | Vendor values not usable as benchmarks; challenger not proven out of state |
 
@@ -60,42 +61,53 @@ the books.
 
 <sub><b>Methods.</b> SBA 7(a) term loans, FY2000 onward, as of 2026-09-30: 919,479 loans and 52,141,481 loan-months at risk in 2006-01 to 2026-09 (115,117 charge-offs, 572,070 payoffs). Cause-specific discrete-time hazards for charge-off and payoff on all events and 5% of other months, intercept corrected; fit 2006–2017, validation 2018–2019, out of time 2020-01 to 2026-09; nine hold-out states. Plan hashed before fitting; four documented deviations, including the removal of the term (<a href="docs/credit_loss_deviations.md">deviations</a>).</sub>
 
-## 2. Knowing the economy's path rarely improved the forecast, and once made it far worse.
+## 2. Three rounds of fixes halved the forecast error, and lifetime losses hold once the model has seen a full cycle.
 
-<img src="figures/figure3.png" alt="Three panels: predicted over actual 24-month charge-offs at eight origins for four models; monthly charge-offs in 2020-21 against forecasts made at December 2019; PSI against forecast error by origin." width="100%">
+<img src="figures/figure3.png" alt="Three panels: 24-month charge-off forecasts against actual at eight origins before and after remediation; monthly charge-offs in 2020-21 against forecasts made at December 2019; lifetime-to-date forecasts against actual at six origins." width="100%">
 
-**Figure 3. Rolling backtest, the payment-relief period and monitoring.** *Notes:* Panel A shows predicted ÷ actual 24-month charge-off dollars at eight December origins for the lookup, the champion logit, the logit scaled by its trailing 24-month error, and the logit with approval-era effects, each refitted on data to the origin and run with the realised macro path; the band is ±25%. Panel B shows monthly charge-off dollars in 2020–2021 against forecasts made at December 2019 with the realised and the frozen macro path; the shaded months are the CARES Act payment-relief window. Panel C plots, for each origin, the population stability index of the book's 24-month charge-off score against the previous origin and the champion's forecast error; orange marks an error above 1.5 times actual with PSI below 0.25.
+**Figure 3. Backtests before and after remediation.** *Notes:* Panel A shows predicted ÷ actual 24-month charge-off dollars at eight December origins for the champion before remediation and for the logit with approval-era effects and the relief overlay, with and without trailing recalibration, each refitted on data to the origin and run with the realised macro path; the band is ±25%, the pass band fixed before the run. Panel B shows monthly charge-off dollars in 2020–2021 against forecasts made at December 2019; the shaded months are those in which SBA made borrowers' loan payments. Panel C shows predicted ÷ actual charge-off dollars of each origin's book from the origin to 2026-09, for the lookup, the champion and two remediated models.
 
-A loss forecast conditioned on the economic path is the premise of a scenario-based allowance. At eight origins
-from 2009 to 2023, the champion's 24-month forecast with the realised path differs from the one with macro held at
-the origin by less than 3% six times. The path helped once, after the financial crisis (0.98 of actual against
-1.23), and hurt once. From December 2019 the champion predicted 7.7 times the charge-offs of April 2020 to December
-2021, because unemployment rose by nine points while SBA made borrowers' loan payments
-([report, §6–7](docs/credit_loss_cecl_validation.md#6-rolling-backtest-does-knowing-the-macro-path-help)).
+A loss forecast conditioned on the economic path is the premise of a scenario-based allowance. At six of eight
+origins, the champion's 24-month forecast with the realised path differs from the one with macro held at the origin
+by less than 3%. The path helped once, after the financial crisis, and hurt once: from December 2019 the champion
+predicted 7.7 times the charge-offs of April 2020 to December 2021, because unemployment rose by nine points while
+SBA made borrowers' loan payments ([report, §6–7](docs/credit_loss_cecl_validation.md#6-rolling-backtest-does-knowing-the-macro-path-help)).
 
-No model meets the pass rule fixed in the plan (within ±25% at six of eight origins): the lookup and the champion
-are within it twice, the recalibrated logit three times and the logit with era effects four times. Both fixes for the
-cohort finding were written down with a pass rule before they were run, and neither meets it, so the finding stays
-open. The drift statistic did not help: between the 2015 and 2017 origins the book's PSI was 0.02 while the 2017
-forecast turned out 2.3 times actual. An outcome trigger on predicted ÷ actual charge-offs is proposed instead.
+Three rounds of fixes followed, each with its pass rule written down before it ran
+([deviations D4–D6](docs/credit_loss_deviations.md)): approval-era effects, trailing recalibration, a term for loans
+still in the default pipeline after a downturn, and a documented overlay that treats the payment-relief quarters as
+absorbing the 2020 shock. Together they bring out-of-time predicted ÷ actual from 1.75 to 0.81 outside the relief
+months, halve the typical 24-month error and cut the 2019-origin forecast from 7.2 to 1.6 times actual. The 24-month
+rule (six of eight origins within ±25%) is still not met: the best model reaches five. The remaining misses alternate
+in sign at 2011, 2013 and 2015, when SBA wrote off crisis-era loans during an expansion, a schedule no input at the
+origin can predict.
 
-<sub><b>Methods.</b> Origins every December from 2009 to 2023; models refitted on all data to each origin; projection of each loan month by month with both hazards and the severity model; actual charge-offs from the loan records. Fixes tested: approval-era effects, and scaling by the trailing 24-month actual ÷ predicted.</sub>
+The allowance is a lifetime quantity, so the last round tested lifetime losses: did each origin's book eventually
+lose what the model said? From the 2015 origin on, when the fit covers the crisis and the recovery, all three
+remediated models are within ±25% of the book's actual losses to 2026 (0.94–1.22), where the champion overstates them
+1.8–2.5 times and the lookup 2.5–3.4 times. Fitted on four to eight years (2009–2013 origins), the logit models
+under-predict in 11 of 12 cases, so the pre-set rule of five of six origins is not met either. The finding stays open; the
+recommendation, outside the rules and labelled as such, is to use the era model only when it is fitted on a full
+credit cycle, and only for lifetime losses. Drift statistics did not flag the errors: between the 2015 and 2017
+origins the book's PSI was 0.02 while the 2017 forecast turned out 2.3 times actual.
 
-## 3. Which model you choose moves the allowance more than the Fed's severe scenario does.
+<sub><b>Methods.</b> Origins every December from 2009 to 2023; models refitted on all data to each origin; projection of each loan month by month with both hazards and the severity model; actual charge-offs from the loan records. Lifetime test: the book at each origin projected to 2026-09 (81 to 201 months of outcomes).</sub>
 
-<img src="figures/figure4.png" alt="Three panels: lifetime loss as a share of estimated balance for five models under the Fed baseline and severely adverse scenarios; unemployment paths of the two scenarios; dollar severity by year of charge-off." width="100%">
+## 3. Which model you choose still moves the allowance more than the Fed's severe scenario does.
 
-**Figure 4. Lifetime expected loss of the active book at 2026-09-30.** *Notes:* Panel A shows lifetime expected loss as a share of the estimated outstanding balance of the 232,292 loans active at 2026-09-30 ($128bn), for five models under the Federal Reserve's 2026 supervisory baseline and severely adverse scenarios; the lookup has no macro terms. Panel B shows the unemployment rate in the two scenarios, applied from their 2026Q1 start, with straight-line reversion to the 2006–2025 average after 2029Q1. Panel C shows charge-off dollars over original loan amounts by year of charge-off.
+<img src="figures/figure4.png" alt="Three panels: lifetime loss as a share of estimated balance for six models under the Fed baseline and severely adverse scenarios; unemployment paths of the two scenarios; dollar severity by year of charge-off." width="100%">
 
-Under the Fed baseline the four models with macro terms put lifetime loss at 3.4% to 6.6% of balance; the severely
-adverse scenario adds 0.7 points (logit with era effects) to 2.7 points (champion). The spread between reasonable
-models is larger than the spread between scenarios, and how much the scenario matters depends on which model is
-used. Severity moves little with the cycle (charge-off dollars over original amount 0.58–0.70 a year; the
-severity model is within 2% of actual dollars out of time), so the scenario effect comes almost entirely from the
-hazard. The usable statement is a range with its reasons, not one model's number
-([report, §9](docs/credit_loss_cecl_validation.md#9-lifetime-expected-loss-at-2026-09-30)).
+**Figure 4. Lifetime expected loss of the active book at 2026-09-30.** *Notes:* Panel A shows lifetime expected loss as a share of the estimated outstanding balance of the 232,292 loans active at 2026-09-30 ($128bn) under the Federal Reserve's 2026 supervisory baseline and severely adverse scenarios, for the three remediated models and the champion (all with the relief overlay in their estimation history), LightGBM and the lookup (no macro terms). Panel B shows the unemployment rate in the two scenarios, applied from their 2026Q1 start, with straight-line reversion to the 2006–2025 average after 2029Q1. Panel C shows charge-off dollars over original loan amounts by year of charge-off.
 
-<sub><b>Methods.</b> Final models fitted on 2006-01 to 2026-09. Horizon: each loan's remaining recorded term (sensitivity: 24 more months, +0.25 to +0.46 points). Expected loss = survival × charge-off hazard × severity × original amount; the lender's retained share is pro rata to the unguaranteed part.</sub>
+The remediated models put lifetime loss at 3.4% to 4.4% of balance under the Fed baseline, against 6.0% for the
+champion; the severely adverse scenario adds 0.1 to 0.8 points to them and 2.5 points to the champion. The spread
+between reasonable models is still at least as large as the spread between scenarios, and how much the scenario
+matters depends on which model is used. Severity moves little with the cycle (charge-off dollars over original amount
+0.58–0.70 a year; the severity model is within 2% of actual dollars out of time), so the scenario effect comes almost
+entirely from the hazard. The usable statement is a range with its reasons, not one model's number
+([report, §9 and §11](docs/credit_loss_cecl_validation.md#11-remediation-three-rounds-each-with-its-rule-written-before-it-ran)).
+
+<sub><b>Methods.</b> Final models fitted on 2006-01 to 2026-09. Horizon: each loan's remaining recorded term (sensitivity: 24 more months, +0.25 to +0.46 points before remediation). Expected loss = survival × charge-off hazard × severity × original amount; the lender's retained share is pro rata to the unguaranteed part.</sub>
 
 ## 4. Prepayment: the simpler model held up out of time; its refinance forecast did not.
 
@@ -162,7 +174,7 @@ a PSI endpoint and 19 tests ([`service/`](service)).
 
 <sub><b>Methods.</b> 2,418,184 arm's-length resales (2022-05 to 2025-08, 49 states and DC); training to 2024-03, calibration 2024-04 to 06. Hedonic OLS, LightGBM on 33 features, a PyTorch neighbour-attention network over the 32 nearest comparable sales, and their equal-weight blend (added after calibration-window results). Split-conformal intervals; county-cluster bootstrap; PSI against the calibration window.</sub>
 
-## 7. Nineteen findings, thirteen still open: the use limits.
+## 7. Twenty findings, fourteen still open: the use limits.
 
 <img src="figures/figure9.png" alt="Two tables: the nine findings of the credit-loss model and the ten findings of the prepayment model, with severity and status." width="100%">
 
@@ -170,9 +182,8 @@ a PSI endpoint and 19 tests ([`service/`](service)).
 
 Each of the following fell short of a rule fixed before the result was seen.
 
-- Credit loss: no model's 24-month forecasts are within ±25% of actual at six of eight origins (best: four).
-- Credit loss: neither fix for the cohort finding meets its pre-set rule (era effects 0.74 of actual out of time and
-  four of eight origins; recalibration 0.93 and three of eight).
+- Credit loss: after three rounds of fixes, no model's 24-month forecasts are within ±25% of actual at six of eight
+  origins (best: five), and none is within ±25% of lifetime losses at five of six origins (best: four).
 - Prepayment: a −10% house-price shock lowers 24-month CPR by 0.015 points under the remediated model; the bar was
   0.05.
 - Prepayment: refinance predicted ÷ actual is 0.70 at fixed origin (bar 0.85) and 0.71 re-estimated monthly (bar
@@ -181,7 +192,7 @@ Each of the following fell short of a rule fixed before the result was seen.
 What follows for use:
 
 - **Report the allowance as a range across models**, with the cohort effect and the macro term's share of it stated,
-  rather than one model's number (credit loss L2, L5).
+  rather than one model's number, and fit it on at least one full credit cycle (credit loss L2, L5, L10).
 - **Switch off or overlay macro terms when policy changes borrowers' payments**, as in 2020–21 (L3).
 - **Monitor outcomes, not only drift.** In both the loss and the valuation studies the drift statistics stayed
   quiet while errors grew (L6; valuation monitoring back-test).

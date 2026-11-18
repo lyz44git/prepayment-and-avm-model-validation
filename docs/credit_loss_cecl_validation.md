@@ -2,7 +2,7 @@
 
 Public SBA 7(a) loan data, as of 2026-09-30. Analysis plan written and hashed before any model was fitted
 (`docs/credit_loss_plan.md`; hash in `reports/p3/plan_hash.json`); every change made afterwards is listed with
-its reason in `docs/credit_loss_deviations.md` (D1–D4). The developer is also the validator, so this is a self-administered
+its reason in `docs/credit_loss_deviations.md` (D1–D6, including three remediation rounds whose rules were written before they ran). The developer is also the validator, so this is a self-administered
 review in the structure of a model validation report, not an independent validation.
 
 ## 1. Purpose and scope
@@ -127,6 +127,13 @@ M1r is the champion scaled by actual ÷ predicted charge-offs of the previous 24
 effects. The plan's pass rule (within ±25% at 6 or more of 8 origins) is not met by any model
 (`backtest_summary.json`). The 2013 origin is pulled down by the 2015 write-off batch (§2).
 
+**After remediation (§11).** With approval-era effects and the relief overlay O1, the same backtest is within ±25% at
+4 of 8 origins (M1v) or 5 of 8 with trailing recalibration (R2a), and the typical error halves (mean absolute log
+ratio 0.36 and 0.33, against 0.68 for the champion; `r2_backtest.csv`). The misses that remain alternate in sign at
+the 2011, 2013 and 2015 origins (about 1.5, 0.3 and 0.7 times actual), when SBA wrote off the crisis-era loans it had
+been liquidating: the book's 24-month charge-offs were $1.17bn after 2011-12 and $3.01bn after 2013-12, during an
+expansion. No input known at the origin predicts that schedule.
+
 **The macro path rarely matters (L4).** Realised and held-at-origin forecasts of the champion differ by less than 3%
 at six of eight origins. The exceptions are 2009 (realised 0.98 against 1.23 held, the one origin where the path
 helps) and 2019, where the path makes the forecast more than twice as wrong (§7).
@@ -138,7 +145,11 @@ path predicted 7.7 times that; with macro held at 2019-12, 3.1 times; with era e
 (`pandemic_check.json`, `backtest_rolling_monthly.csv`). Unemployment rose by 9.2 points in a quarter (quarterly averages, 2020Q1 to Q2) while SBA made
 borrowers' loan payments for several months under the CARES Act, so the historical link between unemployment and
 write-offs did not hold (L3). The plan's rule (record a finding above 1.25) is met. A macro-driven loss model needs
-an explicit overlay, or its macro terms switched off, when government support changes borrowers' payments.
+an explicit overlay, or its macro terms switched off, when government support changes borrowers' payments. The
+overlay O1 (deviation D5) holds unemployment and the BBB spread at their 2020Q1 values for 2020Q2–2021Q3, the quarters
+in which SBA made the payments. With it, the era model's forecast for April 2020 to December 2021 falls from 2.2 to
+1.6 times actual (`r2_backtest_monthly.csv`). O1 is a documented qualitative adjustment, not an estimate, and
+results without it are reported beside it.
 
 ## 8. Severity
 
@@ -175,6 +186,11 @@ reversion over four quarters to the 2006–2025 average (deviation D3). Lifetime
   its retained balance (M1v baseline $1.03bn of $4.32bn in total).
 - **Horizon.** Allowing 24 months beyond the recorded term for charge-offs posted after maturity adds 0.25 points
   (M1v) to 0.46 points (M1) under the baseline.
+- **After remediation.** With approval eras and the relief overlay, the candidates put lifetime loss at 3.4% (M1v),
+  3.4% (R2b) and 4.4% (R2a) of balance under the baseline and 4.0%, 3.6% and 5.2% under the severely adverse
+  scenario (`r2_cecl_allowance.csv`); the champion with the overlay stays at 6.0% and 8.5%. The range across
+  remediated models, 1.0 point under the baseline, is still wider than the scenario effect for two of the three
+  (+0.1 to +0.8 points).
 - **Segments.** Express loans carry the highest estimated loss (M1v baseline 4.4% of balance against 3.4% for
   Preferred Lenders loans; `cecl_by_segment.csv`).
 
@@ -187,38 +203,59 @@ As in the valuation study, drift statistics on inputs and scores did not flag th
 outcome trigger is proposed: review the model when the trailing 24-month predicted ÷ actual charge-offs leaves
 0.80–1.25.
 
-## 11. Remediation candidates for the vintage finding
+## 11. Remediation: three rounds, each with its rule written before it ran
 
-Both candidates and their rule were written down before they were run (deviation D4).
-
-| Candidate | Out of time, excluding 2020-04..2021-12 (rule 0.80–1.25) | Rolling backtest within ±25% (rule ≥ 6 of 8) | Result |
+| Round | Candidates | Rule | Result |
 |---|---|---|---|
-| M1v: approval-era effects | 0.74 | 4 of 8 | not met |
-| M1r: trailing 24-month recalibration | 0.93 | 3 of 8 | not met |
+| D4 | M1v approval eras; M1r trailing recalibration | Out of time 0.80–1.25 (excluding 2020-04..2021-12) and 24-month backtest within ±25% at ≥ 6 of 8 origins | Not met: 0.74 and 4/8; 0.93 and 3/8 |
+| D5 | Eras plus recalibration (R2a), downturn exposure (R2b), both (R2c); relief overlay O1 on all | Same | Not met. Best: M1v + O1 0.81 and 4/8; R2a + O1 0.73 and 5/8 |
+| D6 | Lifetime-to-date backtest of the book at six origins, 2009–2019 | Within ±25% at ≥ 5 of 6 | Not met: R2b 4/6, M1v and R2a 3/6, lookup 2/6, champion 0/6 |
 
-Neither candidate meets the rule (`remediation_eval.csv`), so the vintage finding stays open. M1v has the smallest
-typical backtest error and halves the macro sensitivity; M1r is the simplest control to run each quarter. Both are
-reported alongside the champion rather than replacing it.
+Lifetime-to-date predicted ÷ actual charge-off dollars (`r3_lifetime_backtest.csv`):
+
+| Origin | Lookup | Champion | M1v + O1 | R2a + O1 | R2b + O1 |
+|---|---|---|---|---|---|
+| 2009-12 | 0.55 | 0.39 | 0.40 | 0.42 | 0.96 |
+| 2011-12 | 0.93 | 0.69 | 0.57 | 0.58 | 0.52 |
+| 2013-12 | 1.01 | 0.65 | 0.38 | 0.30 | 0.37 |
+| 2015-12 | 2.54 | 1.81 | 0.97 | 1.19 | 1.16 |
+| 2017-12 | 3.41 | 2.47 | 1.11 | 1.14 | 1.22 |
+| 2019-12 | 3.14 | 2.24 | 1.03 | 0.94 | 1.09 |
+
+- **What the remediation fixed.** Out of time, outside the relief months, predicted ÷ actual moves from 1.75 for the
+  champion to 0.81 (0.84 with downturn exposure), and over the whole window from 2.79 to 0.91; the typical 24-month
+  backtest error halves; the 24-month forecast from 2019-12 falls from 7.2 to 1.6 times actual.
+- **Where it holds.** Once the fit covers the crisis and the recovery (origins 2015, 2017, 2019), all three
+  remediated models are within ±25% of the book's lifetime losses at every origin, where the champion overstates them
+  1.8–2.5 times and the lookup 2.5–3.4 times.
+- **Where it does not (L10).** Fitted on four to eight years (origins 2009–2013), the logits under-predict lifetime
+  losses in 11 of 12 model-origin pairs (0.30–0.69; the downturn-exposure model is the exception at 2009): the fit has
+  not yet seen how long crisis-era defaults take to be written off.
+- **Decision.** No candidate meets a pre-set rule, so none is adopted and the vintage finding stays open.
+  Recommendation, outside the pre-set rules and labelled as such: use M1v with O1 for the lifetime allowance only
+  when it is fitted on at least one full credit cycle, as the 2026 fit is (2006–2026); report the range across M1v,
+  R2a and R2b; do not use it for 24-month or quarterly charge-off forecasts.
 
 ## 12. Findings log
 
 | # | Severity | Status | Finding | Use limit or remediation |
 |---|---|---|---|---|
 | L1 | High | Closed | Recorded term revised after default; any term-based feature leaks the outcome (challenger AUC 0.935 with it, 0.737 without) | Term not used as a predictor or for censoring |
-| L2 | High | Open | Cohort quality is confounded with macro sensitivity: in-sample predicted ÷ actual 0.69–0.77 for FY2006–07 loans and 1.28–2.34 for FY2009–18; out of time 2.8 | Era effects halve the unemployment coefficient; neither candidate meets the pre-set rule (§11) |
-| L3 | High | Open | Payment relief in 2020–21: 7.7-fold over-prediction with the realised macro path | Overlay or macro terms off when government support changes payments |
+| L2 | High | Open | Cohort quality is confounded with macro sensitivity: in-sample predicted ÷ actual 0.69–0.77 for FY2006–07 loans and 1.28–2.34 for FY2009–18; out of time 2.8 | Era effects halve the unemployment coefficient and bring the level to 0.81; three rounds, no pre-set rule met (§11) |
+| L3 | High | Open | Payment relief in 2020–21: 7.7-fold over-prediction with the realised macro path | Overlay O1 (documented, not estimated) brings the era model to 1.6 times |
 | L4 | Medium | Open | The macro path changes 24-month forecasts by less than 3% at six of eight origins; helps once (2009), hurts once (2019) | Scenario-conditioned forecasts are assumptions more than estimates |
-| L5 | Medium | Open | Model choice moves the lifetime estimate (3.4%–6.6% of balance, baseline) more than the scenario (+0.7 to +2.7 points) | Report the allowance as a range across models, not as one model's number |
+| L5 | Medium | Open | Model choice moves the lifetime estimate (3.4%–6.6% of balance, baseline; 3.4%–4.4% across remediated models) more than the scenario (+0.1 to +2.7 points) | Report the allowance as a range across models, not as one model's number |
 | L6 | Medium | Open | PSI 0.02 while the forecast was 2.3 times actual (2017) | Outcome trigger on 24-month predicted ÷ actual |
 | L7 | Medium | Info | Charge-off timing is administrative: four-year median lag, batches of up to 1,935 loans in a month | Read monthly backtests with the batches in view |
 | L8 | Low | Open | Severity measured on original amount, not balance | Needs balance data |
 | L9 | Low | Info | Interest rate missing FY2000–09; collateral flag recording changes | Not used |
+| L10 | Medium | Open | Fitted on four to eight years, the logits under-predict the book's lifetime losses in 11 of 12 model-origin pairs (0.30–0.69 at the 2009–2013 origins) | Fit on at least one full credit cycle before use for an allowance |
 
 ## 13. Use limits and limitations
 
-- **Use.** The models rank loans by charge-off risk with modest discrimination (out-of-time AUC 0.68–0.74). Their
-  level must be recalibrated or bounded before it enters an allowance, and their scenario sensitivity should be
-  read as a model assumption.
+- **Use.** The models rank loans by charge-off risk with modest discrimination (out-of-time AUC 0.68–0.74). For a
+  lifetime allowance, the era model with the relief overlay is within ±25% of lifetime losses once it is fitted on a
+  full cycle; it is not fit for 24-month forecasts, and its scenario sensitivity should be read as a model assumption.
 - **Not tested.** Default timing, delinquency, balances and recoveries are not in the data; the guarantee is assumed
   to share losses pro rata; the book is SBA-guaranteed small-business lending, not a bank's own portfolio.
 - **Data window.** One full credit cycle (2008–2011) and one policy-distorted shock (2020–21) are in the data.
@@ -226,5 +263,5 @@ reported alongside the champion rather than replacing it.
 ## Reproduce
 
 Everything here runs from public data: `scripts/00_download_sba.sh` (SBA 7(a) files and the Fed 2026 scenarios),
-then scripts 40–44 in order (about an hour on a 32-core machine). The aggregate tables behind every number are in
+then scripts 40–47 in order (about two hours on a 32-core machine). The aggregate tables behind every number are in
 `reports/p3/`.

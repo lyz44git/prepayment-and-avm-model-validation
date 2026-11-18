@@ -91,3 +91,29 @@ def test_monitoring_and_severity():
     r = _csv("remediation_eval.csv").set_index(["model", "window"]).pred_over_actual
     assert r[("M1v logit + approval eras", "excluding 2020-04..2021-12")] == pytest.approx(0.74, abs=0.005)
     assert r[("M1r logit, trailing recalibration", "excluding 2020-04..2021-12")] == pytest.approx(0.93, abs=0.005)
+
+
+def test_remediation_rounds_as_reported():
+    """D5: relief overlay and approval eras; D6: lifetime-to-date backtest. No pre-set rule is met."""
+    s2 = json.loads((P3 / "r2_summary.json").read_text())
+    assert s2["adopted"] is None
+    assert s2["M1v +O1"]["within_25pct"] == 4 and s2["M1v +O1"]["oot_excl_relief"] == pytest.approx(0.81, abs=0.005)
+    assert s2["R2a +O1"]["within_25pct"] == 5 and s2["R2a +O1"]["oot_excl_relief"] == pytest.approx(0.73, abs=0.005)
+    assert s2["M1v +O1"]["mean_abs_log_ratio"] == pytest.approx(0.357, abs=5e-4)
+    s3 = json.loads((P3 / "r3_summary.json").read_text())
+    assert s3["adopted_for_lifetime_allowance"] is None
+    assert [s3[m]["within_25pct"] for m in ("M0", "M1", "M1v", "R2a", "R2b")] == [2, 0, 3, 3, 4]
+    lt = _csv("r3_lifetime_backtest.csv")
+    late = lt[lt.origin.isin(["2015-12", "2017-12", "2019-12"]) & lt.model.isin(["M1v", "R2a", "R2b"])].dollar_ratio
+    assert late.min() == pytest.approx(0.94, abs=0.005) and late.max() == pytest.approx(1.22, abs=0.005)
+    early = lt[lt.origin.isin(["2009-12", "2011-12", "2013-12"]) & lt.model.isin(["M1", "M1v", "R2a", "R2b"])].dollar_ratio
+    assert (early < 0.7).sum() == 11
+
+
+def test_allowance_after_remediation():
+    c = _csv("r2_cecl_allowance.csv").set_index(["scenario", "model"]).loss_over_balance
+    base = {m: c[("baseline", m)] for m in ("M1v", "R2a", "R2b")}
+    assert min(base.values()) == pytest.approx(0.0337, abs=5e-5) and max(base.values()) == pytest.approx(0.0436, abs=5e-5)
+    adds = [c[("severe", m)] - c[("baseline", m)] for m in ("M1v", "R2a", "R2b")]
+    assert min(adds) == pytest.approx(0.0012, abs=1e-4) and max(adds) == pytest.approx(0.0082, abs=1e-4)
+    assert c[("baseline", "M1")] == pytest.approx(0.060, abs=5e-4)

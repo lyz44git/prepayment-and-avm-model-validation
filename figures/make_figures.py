@@ -470,6 +470,75 @@ def p_severity_year(ax, letter, title):
     panel(ax, letter, title)
 
 
+def p_backtest2(ax, letter, title):
+    """24-month backtest: the champion before remediation against the remediated candidates (relief overlay O1)."""
+    b0 = csv(P3 + "backtest_rolling.csv"); b0 = b0[(b0.macro == "realised") & (b0.model == "M1")]
+    b2 = csv(P3 + "r2_backtest.csv"); b2 = b2[(b2.macro == "realised") & (b2.overlay)]
+    org = b0.origin.tolist(); x = np.arange(len(org)); s = load(P3 + "r2_summary.json"); s0 = load(P3 + "backtest_summary.json")
+    series = [("Champion, before", b0.set_index("origin").dollar_ratio, NAVY, s0["M1"]["within_25pct"]),
+              ("Eras + relief overlay", b2[b2.model == "M1v"].set_index("origin").dollar_ratio, BLUE, s["M1v +O1"]["within_25pct"]),
+              ("… + recalibration", b2[b2.model == "R2a"].set_index("origin").dollar_ratio, LIGHT, s["R2a +O1"]["within_25pct"])]
+    for i, (lab, r, c, k) in enumerate(series):
+        ax.scatter(x + (i - 1) * 0.17, r.reindex(org), s=40, color=c, edgecolor="white", linewidth=0.8, zorder=4)
+    log_ratio_axis(ax)
+    ax.set_xticks(x, [o[:4] for o in org]); ax.set_xlim(-0.5, len(org) - 0.5)
+    ax.set_xlabel("Forecast origin (December)"); ax.set_ylabel("24-month charge-off $: predicted ÷ actual"); clean(ax)
+    legend(ax, [(f"{lab}: {k}/8 within ±25%", c, "dot") for lab, r, c, k in series], loc="upper left", fontsize=7)
+    panel(ax, letter, title)
+
+
+def p_pandemic2(ax, letter, title):
+    mo = csv(P3 + "backtest_rolling_monthly.csv"); mo = mo[mo.origin == "2019-12"].copy(); mo["month"] = pd.to_datetime(mo.month)
+    r2 = csv(P3 + "r2_backtest_monthly.csv"); r2 = r2[r2.overlay & (r2.model == "M1v")].copy(); r2["month"] = pd.to_datetime(r2.month)
+    act = mo[(mo.model == "M1") & (mo.macro == "realised")]
+    ax.axvspan(pd.Timestamp("2020-04-01"), pd.Timestamp("2021-09-30"), color=PALE, alpha=0.7, lw=0, zorder=0)
+    ax.text(pd.Timestamp("2021-09-20"), 0.97, "SBA paid borrowers' loan payments", transform=ax.get_xaxis_transform(), fontsize=7,
+            color=MUTED, va="top", ha="right")
+    ax.plot(act.month, act.actual_dollars / 1e6, color=INK, lw=2.2, zorder=4)
+    ax.plot(act.month, act.pred_dollars / 1e6, color=NAVY, lw=1.8, zorder=3)
+    ax.plot(r2.month, r2.pred_dollars / 1e6, color=BLUE, lw=2.0, ls=(0, (4, 2)), zorder=3)
+    legend(ax, [("Actual", INK, "line"), ("Champion, realised macro", NAVY, "line"), ("Eras + relief overlay", BLUE, "dash")],
+           loc="upper left", bbox_to_anchor=(0.0, 0.9), fontsize=7)
+    ax.xaxis.set_major_locator(mdates.MonthLocator(bymonth=[1, 7])); ax.xaxis.set_major_formatter(mdates.DateFormatter("%b\n%Y"))
+    ax.set_ylabel("Charge-offs per month ($ million)"); clean(ax)
+    panel(ax, letter, title)
+
+
+def p_lifetime(ax, letter, title):
+    lt = csv(P3 + "r3_lifetime_backtest.csv"); s = load(P3 + "r3_summary.json")
+    org = lt.origin.drop_duplicates().tolist(); x = np.arange(len(org))
+    series = [("M0", "Lookup", GREY), ("M1", "Champion", NAVY), ("M1v", "Eras + overlay", BLUE), ("R2a", "… + recalibration", LIGHT)]
+    for i, (k, lab, c) in enumerate(series):
+        r = lt[lt.model == k].set_index("origin").reindex(org).dollar_ratio
+        ax.scatter(x + (i - 1.5) * 0.15, r, s=40, color=c, edgecolor="white", linewidth=0.8, zorder=4)
+    log_ratio_axis(ax, 0.25, 4)
+    ax.set_xticks(x, [o[:4] for o in org]); ax.set_xlim(-0.5, len(org) - 0.5)
+    ax.set_xlabel("Origin (December); outcomes to 2026-09"); ax.set_ylabel("Lifetime-to-date charge-off $: pred. ÷ actual"); clean(ax)
+    legend(ax, [(f"{lab}: {s[k]['within_25pct']}/6", c, "dot") for k, lab, c in series], loc="upper left", fontsize=7,
+           title="within ±25%", title_fontsize=7, alignment="left")
+    panel(ax, letter, title)
+
+
+def p_allowance2(ax, letter, title):
+    c2 = csv(P3 + "r2_cecl_allowance.csv").set_index(["scenario", "model"]).loss_over_balance
+    c0 = csv(P3 + "cecl_allowance.csv"); c0 = c0[c0.horizon == "recorded term"].set_index(["scenario", "model"]).loss_over_balance
+    order = [("M1v", "Eras + relief overlay", c2), ("R2b", "… + downturn exposure", c2), ("R2a", "Eras + overlay, recalibrated", c2),
+             ("M1", "Champion (with overlay)", c2), ("M2", "LightGBM (before)", c0), ("M0", "Lookup, no macro", c0)]
+    for i, (k, lab, src) in enumerate(order):
+        y = len(order) - 1 - i
+        bse, sev = 100 * src[("baseline", k)], 100 * src[("severe", k)]
+        pill(ax, 0, 11, y, PALE, lw=7, z=1, alpha=0.6); pill(ax, bse, sev, y, OSOFT, lw=7, z=2)
+        dot(ax, bse, y, NAVY, s=58, z=5); dot(ax, sev, y, ORANGE, s=58, z=4)
+        ax.text(bse - 0.25, y, f"{bse:.1f}%", ha="right", va="center", fontsize=7.6, fontweight="bold", color=INK)
+        if sev - bse > 0.05:
+            ax.text(sev + 0.25, y, f"{sev:.1f}%", ha="left", va="center", fontsize=7.6, fontweight="bold", color=ORANGE)
+    ax.set_xlim(0, 11.5); ax.set_ylim(-0.6, len(order) + 0.2)
+    row_axis(ax, [o[1] for o in order], "Lifetime loss, % of estimated balance (active book, 2026-09)")
+    legend(ax, [("Fed baseline", NAVY, "dot"), ("Fed severely adverse", ORANGE, "dot")], loc="upper right", ncol=2, columnspacing=0.8,
+           bbox_to_anchor=(1.0, 1.02))
+    panel(ax, letter, title)
+
+
 # ------------------------------------------------------------------ findings logs (read from the two reports)
 SHORT_P = {"F1": "Loan at risk unobserved: property-level prepayment proxy",
            "F2": "Refinance hazard under-predicted out of time by 26–30%",
@@ -489,7 +558,8 @@ SHORT_L = {"L1": "Loan term revised after default: a leak, removed",
            "L6": "PSI flat while the forecast was 2.3× actual",
            "L7": "Charge-off timing is administrative (write-off batches)",
            "L8": "Severity measured on original amount, not balance",
-           "L9": "Rate and collateral fields change across approval eras"}
+           "L9": "Rate and collateral fields change across approval eras",
+           "L10": "Fits shorter than a full cycle under-predict lifetime losses"}
 
 
 def p_findings(ax, doc_name, start, end, short, title):
@@ -533,15 +603,15 @@ def figure2():
 
 def figure3():
     fig, ax = plt.subplots(1, 3, figsize=(10.6, 3.5), dpi=300, layout="constrained", gridspec_kw=dict(width_ratios=[1.1, 1.05, 0.9]))
-    p_backtest(ax[0], "A", "Rolling 24-month backtest, 8 origins")
-    p_pandemic(ax[1], "B", "When policy broke the link: 2020–21")
-    p_monitor(ax[2], "C", "Drift statistic vs. forecast error")
+    p_backtest2(ax[0], "A", "24-month backtest, before and after")
+    p_pandemic2(ax[1], "B", "Payment relief, 2020–21")
+    p_lifetime(ax[2], "C", "Lifetime-to-date backtest")
     save(fig, "figures/figure3.png")
 
 
 def figure4():
-    fig, ax = plt.subplots(1, 3, figsize=(10.6, 3.4), dpi=300, layout="constrained", gridspec_kw=dict(width_ratios=[1.25, 0.9, 0.85]))
-    p_allowance(ax[0], "A", "Lifetime loss: model vs. scenario")
+    fig, ax = plt.subplots(1, 3, figsize=(10.8, 3.5), dpi=300, layout="constrained", gridspec_kw=dict(width_ratios=[1.35, 0.9, 0.85]))
+    p_allowance2(ax[0], "A", "Lifetime loss after remediation")
     p_ur(ax[1], "B", "Fed 2026 unemployment paths")
     p_severity_year(ax[2], "C", "Severity barely moves with the cycle")
     save(fig, "figures/figure4.png")
@@ -579,7 +649,7 @@ def figure8():
 
 
 def figure9():
-    fig, ax = plt.subplots(2, 1, figsize=(7.6, 6.9), dpi=300, layout="constrained", gridspec_kw=dict(height_ratios=[9.6, 10.6]))
+    fig, ax = plt.subplots(2, 1, figsize=(7.6, 7.2), dpi=300, layout="constrained", gridspec_kw=dict(height_ratios=[10.6, 10.6]))
     p_findings(ax[0], "credit_loss_cecl_validation.md", "## 12. Findings log", "## 13.", SHORT_L, "Credit-loss model")
     p_findings(ax[1], "prepayment_model_development_and_validation.md", "## 7. Findings log", "## 8.", SHORT_P, "Prepayment model")
     save(fig, "figures/figure9.png")

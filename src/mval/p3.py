@@ -38,12 +38,21 @@ def _read_fed(path: Path) -> pd.DataFrame:
     d["year"], d["q"] = q[0], q[1]
     return d.rename(columns=FED_COLS)[["year", "q", *FED_COLS.values()]]
 
-def macro_quarterly(fed_dir: Path, scenario: str = "baseline") -> pd.DataFrame:
-    """History to 2025Q4 from the historic file, then the named supervisory scenario from 2026Q1 (to 2028Q4)."""
+RELIEF_QUARTERS = [(2020, 2), (2020, 3), (2020, 4), (2021, 1), (2021, 2), (2021, 3)]   # SBA paid 7(a) payments
+
+def macro_quarterly(fed_dir: Path, scenario: str = "baseline", relief_overlay: bool = False) -> pd.DataFrame:
+    """History to 2025Q4 from the historic file, then the named supervisory scenario from 2026Q1 (to 2029Q1).
+    relief_overlay (deviation D5, overlay O1): unemployment and the BBB spread for 2020Q2-2021Q3 are held at their
+    2020Q1 values before the 4-quarter changes are computed."""
     hist = _read_fed(fed_dir / "2026_Final_Historic_Domestic.csv")
     name = {"baseline": "Baseline", "severe": "Severely_Adverse"}[scenario]
     scen = _read_fed(fed_dir / f"2026_Final_Supervisory_{name}_Domestic.csv")
     q = pd.concat([hist[hist.year <= 2025], scen[scen.year >= 2026]]).sort_values(["year", "q"]).reset_index(drop=True)
+    if relief_overlay:
+        base = q[(q.year == 2020) & (q.q == 1)].iloc[0]
+        sel = pd.Series(list(zip(q.year, q.q))).isin(RELIEF_QUARTERS).to_numpy()
+        for c in ("ur", "bbb", "t10"):
+            q.loc[sel, c] = base[c]
     q["dur4"] = q.ur - q.ur.shift(4)
     q["bbb_spread"] = q.bbb - q.t10
     q["dprime4"] = q.prime - q.prime.shift(4)
@@ -72,6 +81,22 @@ def macro_monthly(q: pd.DataFrame, last_month: int, revert_quarters: int = 4) ->
     m.attrs["long_run"] = lr.to_dict()
     return m
 
+def downturn_exposure(dur4_by_month: pd.Series, t: np.ndarray, disb_m: np.ndarray, lag: int = 12, window: int = 36,
+                      frozen_at: int | None = None) -> np.ndarray:
+    """Largest 4-quarter rise in unemployment dated between max(first disbursement, t - lag - window) and t - lag,
+    floored at 0 (deviation D5). With frozen_at, months after it take the value at frozen_at (macro held at origin)."""
+    s = dur4_by_month
+    t = np.asarray(t); d = np.asarray(disb_m)
+    out = np.zeros(len(t))
+    for k in range(window + 1):
+        m = t - lag - k
+        if frozen_at is not None:
+            m = np.minimum(m, frozen_at)
+        v = s.reindex(m).to_numpy()
+        v = np.where((t - lag - k >= d) & ~np.isnan(v), v, 0.0)
+        out = np.maximum(out, v)
+    return np.maximum(out, 0.0)
+
 # ---------------------------------------------------------------- logit design
 SECTORS = ["11", "21", "22", "23", "31", "42", "44", "48", "51", "52", "53", "54", "56", "61", "62", "71", "72", "81"]
 
@@ -83,8 +108,8 @@ def era_of(approval_fy) -> np.ndarray:
 class CreditDesign:
     """Design from the plan without the term-based features (deviation D1): age spline, loan and borrower attributes,
     month of year, state FE, and the macro terms of one cause."""
-    def __init__(self, cause: str, lag: int = 0, eras: bool = False):
-        self.cause, self.lag, self.eras = cause, lag, eras
+    def __init__(self, cause: str, lag: int = 0, eras: bool = False, downturn: bool = False):
+        self.cause, self.lag, self.eras, self.downturn = cause, lag, eras, downturn
     def fit(self, p: pd.DataFrame):
         self.states = sorted(p.state.unique())
         e = era_of(p.approval_fy)                       # an era gets its own effect only with >= 50 events in the fit
@@ -119,6 +144,8 @@ class CreditDesign:
             X[f"moy{k}"] = (p.moy == k).astype(np.int8)
         for c in self.macro_cols():
             X[c] = p[c].astype(float)
+        if getattr(self, "downturn", False):            # deviation D5: default pipeline after a downturn
+            X["dx"] = p.dx.astype(float)
         if self.eras:                                   # loans from an era not yet in the fit take the latest fitted era
             e = np.minimum(era_of(p.approval_fy), getattr(self, "max_era", 4))
             for k in range(1, 5):

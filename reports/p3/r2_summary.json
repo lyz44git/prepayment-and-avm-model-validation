@@ -1,0 +1,64 @@
+{
+  "rules": {
+    "i": "out-of-time pred/actual excluding 2020-04..2021-12 within 0.80-1.25",
+    "ii": "realised-macro 24-month dollars within +/-25% at >= 6 of 8 origins (with overlay O1)"
+  },
+  "M1v": {
+    "within_25pct": 4,
+    "mean_abs_log_ratio": 0.3971013662586751,
+    "oot_excl_relief": 0.7435860757912269,
+    "rule_i": false,
+    "rule_ii": false
+  },
+  "R2a": {
+    "within_25pct": 4,
+    "mean_abs_log_ratio": 0.402408858459275,
+    "oot_excl_relief": 0.675515978707053,
+    "rule_i": false,
+    "rule_ii": false
+  },
+  "R2b": {
+    "within_25pct": 3,
+    "mean_abs_log_ratio": 0.5334672458312049,
+    "oot_excl_relief": 0.5987979816906736,
+    "rule_i": false,
+    "rule_ii": false
+  },
+  "R2c": {
+    "within_25pct": 3,
+    "mean_abs_log_ratio": 0.548919240612626,
+    "oot_excl_relief": 0.5174589517512679,
+    "rule_i": false,
+    "rule_ii": false
+  },
+  "M1v +O1": {
+    "within_25pct": 4,
+    "mean_abs_log_ratio": 0.3567612256914385,
+    "oot_excl_relief": 0.8052181933299709,
+    "rule_i": true,
+    "rule_ii": false
+  },
+  "R2a +O1": {
+    "within_25pct": 5,
+    "mean_abs_log_ratio": 0.3271355522023742,
+    "oot_excl_relief": 0.7315061075629111,
+    "rule_i": false,
+    "rule_ii": false
+  },
+  "R2b +O1": {
+    "within_25pct": 4,
+    "mean_abs_log_ratio": 0.45424247687094366,
+    "oot_excl_relief": 0.8349254794743712,
+    "rule_i": true,
+    "rule_ii": false
+  },
+  "R2c +O1": {
+    "within_25pct": 4,
+    "mean_abs_log_ratio": 0.4440362043128217,
+    "oot_excl_relief": 0.7215115558328911,
+    "rule_i": false,
+    "rule_ii": false
+  },
+  "adopted": null,
+  "best_with_overlay": "R2a +O1"
+}
