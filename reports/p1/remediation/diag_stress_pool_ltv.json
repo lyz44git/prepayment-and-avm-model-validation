@@ -1,0 +1,8 @@
+{
+  "pool_properties": 564732,
+  "median_ltv": 0.2952998013394298,
+  "share_ltv_ge_0.8": 0.0,
+  "share_ltv_ge_0.8_after_minus10pct": 3.010277441335005e-05,
+  "share_ltv_ge_0.8_after_minus20pct": 0.006210025286330507,
+  "share_ltv_lt_0.5": 0.9072303322637995
+}

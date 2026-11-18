@@ -1,0 +1,8 @@
+{
+  "pmms_2025_06": 6.8175,
+  "train_pmms_range": [
+    5.2225,
+    7.62
+  ],
+  "horizon_months": 24
+}

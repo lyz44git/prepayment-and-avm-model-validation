@@ -1,0 +1,7 @@
+{
+  "n": 455397,
+  "spearman_stated_vs_realised": 0.045411738251535355,
+  "auc_stated_for_err_gt20": 0.49805539158019957,
+  "stated_rel_err_median": 0.201814532392535,
+  "distinct_values": 125059
+}

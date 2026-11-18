@@ -1,0 +1,6 @@
+{
+  "train_months": 26,
+  "oot_months": 12,
+  "best_static_ts": "damped Holt",
+  "best_rolling": "ARX(1) + PMMS"
+}

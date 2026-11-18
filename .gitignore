@@ -1,0 +1,13 @@
+# data are never committed
+data_work/
+data_external/
+tmp/
+*.parquet
+*.pkl
+*.pt
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+# Finder / iCloud conflict copies
+* 2.*

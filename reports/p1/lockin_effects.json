@@ -1,0 +1,28 @@
+{
+  "lockin_sale": {
+    "gap_pos_coef": 0.0196163614063968,
+    "se_cluster": 0.0145616203007028,
+    "odds_ratio_per_pp": 1.0198100264857635,
+    "or_95ci": [
+      0.9911152900024743,
+      1.0493355320129278
+    ],
+    "m1_ame_pct_change_hazard_per_pp": 0.022316210105567835,
+    "m2_ame_pct_change_hazard_per_pp": -0.009512663971644408,
+    "gap_neg_coef": 0.0479498908640931,
+    "gap_neg_se": 0.0220659142348463
+  },
+  "lockin_new_lien": {
+    "gap_pos_coef": -0.1137721410236974,
+    "se_cluster": 0.0197721186765462,
+    "odds_ratio_per_pp": 0.8924612880314815,
+    "or_95ci": [
+      0.8585370064528497,
+      0.927726055660192
+    ],
+    "m1_ame_pct_change_hazard_per_pp": -0.09281590853075006,
+    "m2_ame_pct_change_hazard_per_pp": -0.04527353255968014,
+    "gap_neg_coef": -0.0102189218016378,
+    "gap_neg_se": 0.0244050916167142
+  }
+}

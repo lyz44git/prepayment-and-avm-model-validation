@@ -1,0 +1,21 @@
+{
+  "F9": {
+    "hpi_m10_delta_pp": -0.015039331851322668,
+    "hpi_m20_delta_pp": -0.030010283053409026,
+    "hpi_p10_delta_pp": 0.014530606361206289,
+    "s1_minus_s0_oot_auc_sale": 9.797613441298036e-05,
+    "s1_minus_s0_oot_auc_new_lien": -0.00015321736066165048,
+    "s1_minus_s0_oot_cpr_mae_pp": -0.0040713917616693185,
+    "closed": false
+  },
+  "F2": {
+    "published_oot_new_lien_pred_over_actual": 0.703332056964411,
+    "m1r_fixed_oot_new_lien_pred_over_actual": 0.7041199509277181,
+    "m1r_walkforward_oot_new_lien_pred_over_actual": 0.705411690822651,
+    "m1r_walkforward_oot_cpr_mae_pp": 0.42981868855984096,
+    "s0_walkforward_oot_new_lien_pred_over_actual": 0.7046608262982096,
+    "s0_walkforward_oot_cpr_mae_pp": 0.4332789307621783,
+    "reduced_at_fixed_origin": false,
+    "mitigated_by_maintenance": false
+  }
+}

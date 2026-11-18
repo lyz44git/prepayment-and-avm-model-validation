@@ -1,0 +1,52 @@
+{
+  "sale": {
+    "max_abs_coef_diff_key": 0.04777040332263946,
+    "max_abs_diff_in_se_units_key": 0.19965940922242245,
+    "coef_corr_all": 0.9985729124042118,
+    "pred_corr_all_rows": 0.9992745482837581,
+    "mean_pred_ratio_cc_over_full": 0.9915190602218503,
+    "key_coefs": {
+      "case_control": {
+        "gap_pos": 0.0196,
+        "gap_neg": 0.0479,
+        "log_appr": -0.2104,
+        "est_ltv": -0.1538,
+        "pmms": -0.1494,
+        "log_value": 0.0653
+      },
+      "full_irls": {
+        "gap_pos": 0.0198,
+        "gap_neg": 0.0524,
+        "log_appr": -0.2193,
+        "est_ltv": -0.2015,
+        "pmms": -0.1493,
+        "log_value": 0.0653
+      }
+    }
+  },
+  "new_lien": {
+    "max_abs_coef_diff_key": 0.054695908518541,
+    "max_abs_diff_in_se_units_key": 0.16722106895296449,
+    "coef_corr_all": 0.999628268301257,
+    "pred_corr_all_rows": 0.999635520565794,
+    "mean_pred_ratio_cc_over_full": 0.9967218757090051,
+    "key_coefs": {
+      "case_control": {
+        "gap_pos": -0.1138,
+        "gap_neg": -0.0102,
+        "log_appr": -0.4894,
+        "est_ltv": -2.9852,
+        "pmms": -0.2245,
+        "log_value": -0.2104
+      },
+      "full_irls": {
+        "gap_pos": -0.1151,
+        "gap_neg": -0.0061,
+        "log_appr": -0.4802,
+        "est_ltv": -2.9305,
+        "pmms": -0.2275,
+        "log_value": -0.2124
+      }
+    }
+  }
+}
