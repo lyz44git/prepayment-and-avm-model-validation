@@ -264,7 +264,9 @@ Lifetime-to-date predicted ÷ actual charge-off dollars (`r3_lifetime_backtest.c
   candidates are within ±25% of the book's losses to date (0.94–1.22), where the champion overstates them 1.8–2.5
   times and the lookup 2.5–3.4 times. This is an observation made after the results were seen, not a passed test:
   the three books overlap and share the 2020–26 outcome window, the losses are to date (81 months for the 2019
-  origin), and every run uses O1, which knows about the 2020–21 relief. The lifetime test has not been run without the overlay.
+  origin), and every run uses O1, which knows about the 2020–21 relief. Without O1 the counts are the same (best four of six) and the three candidates stay within
+  ±25% at the three latest origins (0.87–1.21; `r3_lifetime_backtest_no_overlay.csv`), so the pattern does not come
+  from the overlay.
 - **Where it does not (L10).** Fitted on four to eight years (origins 2009–2013), the logits under-predict lifetime
   losses in all 12 model-origin pairs, in 11 of them by more than 30% (0.30–0.69; the downturn-exposure model at
   2009 is at 0.96): the fit has not yet seen how long crisis-era defaults take to be written off.

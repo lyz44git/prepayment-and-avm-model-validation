@@ -1,0 +1,39 @@
+{
+  "rule": "lifetime-to-date dollars within +/-25% at >= 5 of 6 origins (2009-2019); adoption also needs rule (i)",
+  "M0": {
+    "within_25pct": 2,
+    "mean_abs_log_ratio": 0.6639325192315,
+    "lifetime_rule": false,
+    "oot_excl_relief": null,
+    "rule_i": null
+  },
+  "M1": {
+    "within_25pct": 0,
+    "mean_abs_log_ratio": 0.7632991850125764,
+    "lifetime_rule": false,
+    "oot_excl_relief": null,
+    "rule_i": null
+  },
+  "M1v": {
+    "within_25pct": 3,
+    "mean_abs_log_ratio": 0.4471684790224401,
+    "lifetime_rule": false,
+    "oot_excl_relief": 0.7435860757912269,
+    "rule_i": false
+  },
+  "R2a": {
+    "within_25pct": 3,
+    "mean_abs_log_ratio": 0.4905331343758526,
+    "lifetime_rule": false,
+    "oot_excl_relief": 0.675515978707053,
+    "rule_i": false
+  },
+  "R2b": {
+    "within_25pct": 4,
+    "mean_abs_log_ratio": 0.31548061375576786,
+    "lifetime_rule": false,
+    "oot_excl_relief": 0.5987979816906736,
+    "rule_i": false
+  },
+  "adopted_for_lifetime_allowance": null
+}

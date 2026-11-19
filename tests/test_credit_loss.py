@@ -120,6 +120,15 @@ def test_remediation_rounds_as_reported():
     assert (early < 0.7).sum() == 11
 
 
+def test_lifetime_backtest_without_overlay():
+    s = json.loads((P3 / "r3_summary_no_overlay.json").read_text())
+    assert [s[m]["within_25pct"] for m in ("M0", "M1", "M1v", "R2a", "R2b")] == [2, 0, 3, 3, 4]
+    assert s["adopted_for_lifetime_allowance"] is None
+    lt = _csv("r3_lifetime_backtest_no_overlay.csv")
+    late = lt[lt.origin.isin(["2015-12", "2017-12", "2019-12"]) & lt.model.isin(["M1v", "R2a", "R2b"])].dollar_ratio
+    assert late.min() == pytest.approx(0.87, abs=0.005) and late.max() == pytest.approx(1.21, abs=0.005)
+
+
 def test_input_checks_added_at_review():
     """L11: business-age coding by approval year; L12: 2026Q1-Q3 scenario inputs against published series."""
     b = _csv("business_age_by_approval_fy.csv").set_index("approval_fy")

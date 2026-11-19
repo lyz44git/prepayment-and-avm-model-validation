@@ -94,7 +94,8 @@ lose what the model said? The pre-set rule (within ±25% at five of six origins)
 reaches four. Fitted on four to eight years (2009–2013 origins), the logit models under-predict in all 12 cases, in
 11 by more than 30%. At the three latest origins the three candidates are within ±25% of losses to date (0.94–1.22),
 where the champion overstates them 1.8–2.5 times; that pattern was seen after the fact, the three books overlap,
-and every run uses the overlay. The lifetime test has not been run without the overlay. The finding stays open and the disposition is research use only. The
+and every run uses the overlay. Without the overlay the counts are the same and the three candidates stay within ±25% at the three
+latest origins (0.87–1.21), so the pattern does not come from the overlay. The finding stays open and the disposition is research use only. The
 recommendation, outside the rules and labelled as such, is to fit on a full credit cycle and report a range. Drift
 statistics did not flag the 2017 error: between the 2015 and 2017 origins the book's PSI was 0.02 while the 2017
 forecast turned out 2.3 times actual.
