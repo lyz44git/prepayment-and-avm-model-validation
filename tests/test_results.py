@@ -245,3 +245,34 @@ def test_review_checks_valuation():
     assert c3.loc[("prior_sale_indexed", "sales with a prior recorded sale"), "MdAPE"] == pytest.approx(0.166, abs=5e-4)
     assert c3.loc[("prior_sale_indexed", "sales with a prior recorded sale"), "median_ratio"] == pytest.approx(0.97, abs=0.005)
     assert c3.loc[("realised_price", "all OOT sales"), "MdAPE"] == pytest.approx(0.413, abs=5e-4)
+
+
+
+CITED = [("Shumway", 2001), ("Campbell", 2008), ("Das", 2007), ("Duffie", 2009), ("Demyanyk", 2011), ("Rajan", 2015),
+         ("Fuster", 2022), ("Schwartz", 1989), ("Stanton", 1995), ("Deng", 2000), ("Andersen", 2020), ("Berger", 2021),
+         ("Avenancio-León", 2022), ("Lucas", 1976), ("Harvey", 2017)]
+
+
+def test_every_cited_work_is_in_the_reference_list():
+    import re
+    root = R.parent
+    refs = (root / "docs" / "references.md").read_text()
+    text = "\n".join(f.read_text() for f in [root / "README.md"] + sorted((root / "docs").glob("*.md")) if f.name != "references.md")
+    for surname, year in CITED:
+        assert re.search(r"\*\*" + re.escape(surname) + r"[^\n]*\(" + str(year) + r"\)", refs), (surname, year, "missing from references")
+        assert re.search(re.escape(surname) + r"[^()]{0,80}\(?" + str(year), text), (surname, year, "not cited")
+    entries = re.findall(r"^- \*\*([^*]+)\*\*", refs, flags=re.M)
+    assert len(entries) == len(CITED) + 2  # plus SR 11-7 and the FASB update
+
+
+
+def test_champions_keep_ranking_out_of_time():
+    """README lead: champion AUC falls by 0.01-0.07 out of time; flexible challengers lose more."""
+    p = _hazard().auc
+    drops = [p[(c, "train", "m1")] - p[(c, "oot", "m1")] for c in ("sale", "new_lien")]
+    e = pd.read_csv(R / "p3" / "eval_hazard.csv").query("cause == 'co'").set_index(["split", "model"]).auc
+    drops.append(e[("in sample 2006-19", "M1 logit")] - e[("out of time 2020-26", "M1 logit")])
+    assert round(min(drops), 2) == 0.01 and round(max(drops), 2) == 0.07
+    lgb = [p[(c, "train", "m2")] - p[(c, "oot", "m2")] for c in ("sale", "new_lien")]
+    lgb.append(e[("in sample 2006-19", "M2 LightGBM")] - e[("out of time 2020-26", "M2 LightGBM")])
+    assert max(lgb) > max(drops)

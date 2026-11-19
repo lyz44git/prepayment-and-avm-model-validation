@@ -269,3 +269,17 @@ The blend's error in the lowest decile is 16.6% on prior-sale tiers against 41.3
 median ratio there is 0.97 rather than 1.41. Ex-ante tiers carry the opposite artefact (the ex-ante value ÷ price ratio
 rises across deciles), and both ex-ante values are challenger inputs, so the two tierings bound the result rather than
 measure it. The Vendor A AVM's minority-share gap and the extreme bottom-decile error are not robust findings (V7, V8).
+
+## 10. Related literature
+
+Full citations are in `docs/references.md`.
+
+- **Disparity measurement.** Avenancio-León and Howard (2022) document racial gaps in property assessments relative to
+  market values. The vendor-AVM gap measured here is sensitive to how price tiers are built: −0.091 log points on tiers
+  of the realised sale price, −0.010 to −0.024 and not significant on tiers of a value known before the sale (§9).
+  That sensitivity is this study's result, not a claim about the cited paper.
+- **Machine learning in credit.** Fuster, Goldsmith-Pinkham, Ramadorai and Walther (2022) study how more flexible
+  models change who gains from better prediction in mortgage lending; the fairness checks in §4 and §9 are a much
+  narrower measurement exercise on valuation errors.
+- **Model risk.** The structure of this report (vendor due diligence, challengers, outcomes analysis, monitoring and use
+  limits) follows the supervisory guidance on model risk management (SR 11-7 / OCC 2011-12).

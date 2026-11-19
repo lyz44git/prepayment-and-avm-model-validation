@@ -319,3 +319,20 @@ loan-level balances, or with a development window that includes falling prices.
 log loss 0.0086112 vs 0.0086102; out-of-time AUC within 0.001) and it removes the two offsetting equity terms.
 §5–6 describe S0; S1's results are in this section. S1 must not be used for house-price stress testing (F9), and
 trailing recalibration remains a required monitoring step (F2).
+
+## 10. Related literature
+
+Full citations are in `docs/references.md`.
+
+- **Design.** Prepayment and its competitor are modelled as cause-specific discrete-time hazards, in the
+  competing-risk tradition of Deng, Quigley and Van Order (2000), with an empirical prepayment function as in Schwartz
+  and Torous (1989). The estimator is the logit hazard of Shumway (2001).
+- **Why the refinance forecast fails (F2).** Berger, Milbradt, Tourre and Vavra (2021) show that the prepayment
+  response to a rate cut depends on the distribution of refinancing incentives left by the past rate path, and
+  Andersen, Campbell, Nielsen and Ramadorai (2020) show that households act on an incentive with delays that differ
+  across households. The training months here (2022-05 to 2024-06) contain almost no owners with an incentive, so the
+  model cannot learn the response that the September 2024 dip produced; part of the gap was already present before
+  the dip (§7, `r4_f2_by_month.csv`).
+- **Heterogeneity.** Stanton (1995) and Deng et al. (2000) build borrower heterogeneity into prepayment; ignoring it
+  biases prepayment estimates in Deng et al. The model here has none, and the vendor rate field is a market-rate lookup
+  rather than the loan's rate (F8), so both the incentive and its heterogeneity are measured poorly.

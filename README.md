@@ -1,11 +1,14 @@
-# Three models behind a lifetime loss estimate, and where each one breaks
+# Ranking survives, levels do not: validating the three inputs of a lifetime loss estimate
 
 [![tests](https://github.com/lyz44git/prepayment-and-avm-model-validation/actions/workflows/tests.yml/badge.svg)](https://github.com/lyz44git/prepayment-and-avm-model-validation/actions/workflows/tests.yml)
 
 **A lifetime credit-loss estimate depends on three model inputs: when loans are written off and how much is lost, how
-long they stay on the books, and what the collateral is worth. This repository builds one model for each input and
-reviews it the way a model risk office would; none passed every test it was set, and each review ends in a stated use
-limit.**
+long they stay on the books, and what the collateral is worth. Building and reviewing one model for each, the same
+pattern recurs: out of time the champion models keep most of their ability to rank risk (AUC down 0.01–0.07; the
+flexible challengers lose more), but their levels fail whenever the period forecast differs from the one the data
+come from. The failures trace to what the data record, to changes of
+regime and to episodes the data never contain, more than to the choice of estimator. A validator's job is therefore to
+find the assumptions that set the level, show how far they move it, and monitor the level against outcomes.**
 
 ## In 60 seconds
 
@@ -14,6 +17,26 @@ limit.**
 | Loss timing and severity | Credit loss on public SBA 7(a) data: 919,479 loans, 52M loan-months, 2006–2026 | A loan-term field revised after default leaked the outcome (challenger AUC 0.935, 0.737 without it). The champion read safer post-crisis loans as a better economy and over-predicted 2020–26 charge-offs 2.8-fold. Three rounds of fixes, each with its rule fixed in advance, cut the error by a third to a half; none met its rules. | Research use only. Report lifetime loss as a range (3.4–4.4% of balance), not one number; not for 24-month forecasts. |
 | Loan life | Prepayment hazard on licensed property records: 22.9M property-months, 2022–2025 | LightGBM's ranking edge vanished out of time, so the logit stayed champion. Refinances were under-predicted by 26–30%; three of four rate shocks left the training rates; a pre-registered remediation closed neither finding. | Sale side usable; refinance only with trailing recalibration; no house-price stress use. |
 | Collateral value | Home-valuation models on licensed records: 2.4M arm's-length sales, 2022–2025 | One vendor AVM sat 32% below sale prices and another was anchored to the sale price. A challenger cut median error to 11.4% from 16.3% out of time; in unseen states it tied over all months and won only out of time. PSI stayed flat while error rose. | Vendor fields are not benchmarks; the challenger is a monitoring benchmark in the states it was trained on. |
+
+## Why the levels fail
+
+Each failure in the three studies falls into one of five causes. Only the last is a model error in the narrow sense,
+and the tests were set on levels across regimes, which is a high bar.
+
+| Cause | What it means | Where it shows up here | Would more data of the same kind fix it? |
+|---|---|---|---|
+| Measurement | A field does not record what its name says, or records it late | Loan term revised after default; charge-off is an administrative write-off that comes in batches; the vendor "interest rate" is a market-rate lookup; a vendor value anchored to the sale price; September 2026 payoffs not yet recorded | No; the field has to be audited, dropped or redefined |
+| Regime change | The process generating the data changed between fit and forecast | Safer loans after the crisis; SBA paid borrowers' loans in 2020–21; a rate cut after a period of rising rates; vendor values of a 2022 vintage | No; it needs an explicit assumption, an overlay or a refit after the change |
+| Missing support | The data never contain the episode the forecast needs, or cannot separate two effects | One downturn in 2006–2019; no refinancing incentive in 2022–24 training months; almost no loans above 80% LTV; era, age and calendar time collinear | Only with time, or with variation the data lack (more cycles, state-level macro, loan-level rates) |
+| Evaluation design | The test, not the model, produces the result | Price tiers sorted on the realised price; an unseen-state comparison that mixes vendor vintages; overlapping backtest origins | Fixed by redesigning the test, which this repository does where it can |
+| Specification | The model is wrong about something the data could show | The champion read cohort quality as macro sensitivity; no unobserved heterogeneity or common frailty factor | Yes, partly: approval-era effects halve the unemployment coefficient and cut the error by a third to a half |
+
+The same pattern appears in the literature. A default model estimated in one lending regime fails systematically in
+another (Rajan, Seru and Vig 2015); loan quality moves by origination vintage after controlling for observables
+(Demyanyk and Van Hemert 2011); defaults cluster beyond what observable covariates explain (Das, Duffie, Kapadia and
+Saita 2007; Duffie, Eckner, Horel and Saita 2009); and the prepayment response to a rate cut depends on how many
+borrowers the past rate path left in the money (Berger, Milbradt, Tourre and Vavra 2021). Full references:
+[docs/references.md](docs/references.md).
 
 **Scope.** Public SBA loan records for credit loss; licensed property, deed, lien and household records for prepayment
 and valuation (prepayment proxied by home sales and new first liens). None of it is bank, servicer or bureau data, and
@@ -57,9 +80,17 @@ of what it read as sensitivity to the economy was the quality of the loans on th
 age and calendar time are collinear and the era cut-points were set after seeing this table, so the size of the split
 is one reading among several ([report, §5](docs/credit_loss_cecl_validation.md#5-did-the-loans-change-vintage-not-only-the-economy)).
 
+**In the literature.** The champion is a cause-specific discrete-time hazard estimated as a logit, as in Shumway (2001)
+and Campbell, Hilscher and Szilagyi (2008). Its failure is the mechanism of Rajan, Seru and Vig (2015) with the
+opposite sign: there, a model fitted before securitization changed lenders' incentives under-predicted later
+defaults; here, a model whose macro term was learned from crisis-era cohorts over-predicts losses on the safer cohorts
+that followed. The approval-era effects play the role of the vintage effects in Demyanyk and Van Hemert (2011).
+Machine learning improves default prediction in Fuster, Goldsmith-Pinkham, Ramadorai and Walther (2022); here
+LightGBM ranks better but is no better calibrated, so it does not fix the level.
+
 <sub><b>Methods.</b> SBA 7(a) term loans as of 2026-09-30: 919,479 loans and 52,141,481 loan-months at risk in 2006-01 to 2026-09. Cause-specific discrete-time hazards for charge-off and payoff on all events and 5% of other months, intercept corrected; fit 2006–2017, validation 2018–2019, out of time 2020-01 to 2026-09; nine hold-out states. Plan hashed before fitting; six documented deviations (<a href="docs/credit_loss_deviations.md">deviations</a>).</sub>
 
-## 2. Three rounds of fixes cut the forecast error by a third to a half, and no candidate met its pre-set rules.
+## 2. Fixes cut the error by a third to a half; what remains is write-off timing, policy and a single cycle, not the estimator.
 
 <img src="figures/figure3.png" alt="Three panels: 24-month charge-off forecasts against actual at eight origins before and after remediation; monthly charge-offs in 2020-21 against forecasts made at December 2019; lifetime-to-date forecasts against actual at six origins for five models." width="100%">
 
@@ -89,6 +120,12 @@ the unemployment and era effects significant (the drop in the unemployment coeff
 0.095–0.166), and an outcome trigger on trailing predicted ÷ actual would have fired before five of the six misses with
 no false alarm, where a PSI computed without future data caught two.
 
+**In the literature.** The write-off batches and the cohort shifts are the kind of common, unobserved driver that
+Das, Duffie, Kapadia and Saita (2007) and Duffie, Eckner, Horel and Saita (2009) find in corporate defaults; a frailty
+term is not modelled here and is the natural next step. The relief overlay is a policy adjustment that no estimated
+relationship can supply on its own, the point of Lucas (1976). Each round's rule was fixed before it ran, as Harvey
+(2017) urges, but each round was designed after seeing the last, which is the forking-paths risk he describes.
+
 <sub><b>Methods.</b> Origins every December from 2009 to 2023; models refitted on all data to each origin; each loan projected month by month with both hazards and the severity model. Lifetime test: the book at each origin projected to 2026-09 (81 to 201 months of outcomes).</sub>
 
 ## 3. Which model you choose still moves the allowance more than the Fed's severe scenario does.
@@ -113,7 +150,7 @@ factor after the scenario lowers the high end to 3.9%. The usable statement is a
 
 <sub><b>Methods.</b> Final models fitted on 2006-01 to 2026-09. Horizon: each loan's remaining recorded term (sensitivity: 24 more months, +0.25 to +0.47 points). Expected loss = survival × charge-off hazard × severity × original amount; the lender's retained share is pro rata to the unguaranteed part. The scenarios start in 2026Q1, three quarters before the data date (finding L12).</sub>
 
-## 4. Prepayment: the simpler model held up out of time; its refinance forecast did not.
+## 4. Prepayment: the model never saw a refinancing incentive, so it could not forecast one.
 
 <img src="figures/figure5.png" alt="Three panels: predicted over actual hazard by split for sales and refinances; predicted and actual 12-month termination by decile of predicted risk; odds ratio of the rate gap across specifications." width="100%">
 
@@ -130,6 +167,15 @@ distinctive (correlation 0.90, the same as a seasonal-naive forecast), so its va
 stress response. Sales are calibrated in every split; refinancing is under-predicted by 30% out of time, and the gap
 was already 20% before the September 2024 rate dip. Refinancing falls as the lock-in gap widens (odds ratio 0.89 per
 point; 0.87–0.93 in five of six specifications, 0.98 and not significant with a cohort-rate proxy). Clustering by month as well as county leaves that interval unchanged; the market-rate level stays significant with standard errors about twice as wide.
+
+**Why, and in the literature.** The training months (2022-05 to 2024-06) were a period of rising rates in which almost
+no owner had an incentive to refinance; the September 2024 dip created one. Berger, Milbradt, Tourre and Vavra (2021)
+show that the refinancing response to a rate cut depends on the distribution of incentives the past rate path left
+behind, and Andersen, Campbell, Nielsen and Ramadorai (2020) show that households act on an incentive with delay that
+differs across households. A model fitted when no one was in the money cannot learn either. The design follows the
+competing-risk tradition of Deng, Quigley and Van Order (2000) and the empirical prepayment function of Schwartz and
+Torous (1989), but without the borrower heterogeneity that Stanton (1995) and Deng et al. build in; adding it, with
+loan-level rates, is what would be needed to close finding F2.
 
 <sub><b>Methods.</b> A 4% random sample of 642,445 at-risk owner-occupied homes gives 22,885,356 property-months (2022-05 to 2025-06). Cause-specific discrete-time logit hazards for sale and for refinance or new first lien, on all events and 10% of non-events with King–Zeng correction. Training in 41 jurisdictions to 2024-06; out of time 2024-07 to 2025-06; nine hold-out states fixed in advance.</sub>
 
@@ -186,6 +232,13 @@ before the sale removes most of the vendor AVM's minority-share gap and of the e
 ([report, §9](docs/avm_champion_challenger_validation.md#9-robustness-checks-added-at-review-2026-11-18)). The LightGBM challenger is
 packaged as a FastAPI scoring service with a PSI endpoint and 19 tests ([`service/`](service)).
 
+**Why.** The vendor failures are measurement problems in third-party data: a value fixed years before the sale, and a
+value that already contains the sale price. The two results that did not survive are evaluation-design problems: a
+comparison that mixed vendor vintages, and price tiers that sort on the outcome. Studies of assessment gaps, such as
+Avenancio-León and Howard (2022) for property taxes, depend on how values are compared with prices; here the measured
+gap of a vendor AVM moves from −0.091 to −0.010 log points, no longer significant, when tiers are built on a value
+known before the sale.
+
 <sub><b>Methods.</b> 2,418,184 arm's-length resales (2022-05 to 2025-08, 49 states and DC); training to 2024-03, calibration 2024-04 to 06. Hedonic OLS, LightGBM on 33 features, a PyTorch neighbour-attention network over the 32 nearest comparable sales, and their equal-weight blend. Split-conformal intervals; county-cluster bootstrap; PSI against the training window, excluding six inputs that shift by design.</sub>
 
 ## 7. Thirty-three findings, twenty-six still open: the use limits.
@@ -205,6 +258,21 @@ What follows for use:
   price both looked like strong predictors (L1, V2).
 - **Keep stress use inside the training range**, and do not use the prepayment model for house-price stress (F9, F10).
 
+## What this shows, and what it does not
+
+- **It shows** that in three different loss-model inputs the level, not the ranking, is what fails out of time; that
+  the failures trace mostly to measurement, regime change and missing support; that a model assumption about recent
+  cohorts moves a CECL-style lifetime loss more than the Fed's severely adverse scenario; that a field revised after the
+  outcome (the SBA loan term) can pass for a strong predictor; and that an outcome trigger caught errors that input
+  drift statistics missed in both the credit-loss and the valuation back-tests.
+- **It does not show** that any model here is fit for a bank allowance. The validation is self-administered; the data
+  are public SBA records and licensed property records, not a lender's portfolio; prepayment is proxied by sales and
+  new liens; the credit-loss history contains one downturn; backtest origins overlap, so they are not independent
+  tests; the remediation rounds were designed adaptively and reused the same out-of-time window; and the inference
+  clusters by month only.
+- **It does not claim new economics.** The mechanisms are known (see above); the contribution is to show them in a
+  validation of each input, with the tests, failures and use limits written down.
+
 ## How the three studies compare
 
 | | Credit loss | Prepayment | Home valuation |
@@ -214,6 +282,8 @@ What follows for use:
 | Pass rule | Backtests within ±25% (0.75–1.25); out of time and monitoring trigger 0.80–1.25; champion replacement needs 0.90–1.10 | Remediation closure: refinance predicted ÷ actual ≥ 0.85 at fixed origin, 0.90–1.10 re-estimated | None set in advance |
 | Adoption | Nothing adopted outside the rules | Champion by judgement; remediated spec proposed outside the plan and labelled as such | No adoption decision |
 | Pre-registration | Plan and each round hashed before running (round hashes are of private drafts) | Remediation plan hashed before refitting | None |
+
+References for every work cited: [docs/references.md](docs/references.md).
 
 ## The studies
 
@@ -241,7 +311,7 @@ without names or street addresses; the step that builds them is not published.
 ## Repository layout
 
 ```
-docs/       the three validation reports, the two analysis plans and the credit-loss deviations
+docs/       the three validation reports, the two analysis plans, the credit-loss deviations and the references
 reports/    aggregate tables and figures behind every number (p3 credit loss, p1 prepayment, p1/remediation, p2 valuation)
 figures/    Figures 1 to 9, and the script and shared style that draw them from reports/
 scripts/    numbered pipeline: 04-26 prepayment and valuation, 31-35 remediation and checks, 40-51 credit loss

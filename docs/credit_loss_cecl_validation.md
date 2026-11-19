@@ -396,6 +396,28 @@ significant (|z| 4.2–13.2), the BBB spread is not (|z| below 1), and R2b's dow
 0.112 (95% interval 0.095–0.166; no replicate at or below zero). Month clusters ignore correlation across months, so
 these intervals may still be too narrow.
 
+## 15. Related literature
+
+Full citations are in `docs/references.md`.
+
+- **Estimator.** The charge-off and payoff hazards are cause-specific discrete-time hazards estimated as logits, the
+  approach of Shumway (2001) and Campbell, Hilscher and Szilagyi (2008).
+- **Why the level fails out of time.** Rajan, Seru and Vig (2015) show that a default model estimated in one lending
+  regime breaks down systematically in another because the link between observables and default changes. §5 and §11
+  show the same mechanism with the opposite sign: the champion's macro term was learned from crisis-era cohorts and
+  over-predicts losses on the safer cohorts that followed. Demyanyk and Van Hemert (2011) document vintage effects in
+  loan quality after controlling for observables; the approval-era effects here are their SBA counterpart.
+- **What observables miss.** Das, Duffie, Kapadia and Saita (2007) and Duffie, Eckner, Horel and Saita (2009) find
+  default clustering beyond observable covariates and model it with a common frailty factor. The write-off batches
+  (§2) and the cohort shifts (§5, L14) point the same way; no frailty term is estimated here.
+- **Machine learning.** Fuster, Goldsmith-Pinkham, Ramadorai and Walther (2022) study machine-learning default models
+  in mortgage lending. Here LightGBM ranks better than the logit but is no better calibrated out of time (§4), so it
+  does not address the level failure.
+- **Policy regimes.** The 2020–21 payment relief broke the estimated link between unemployment and write-offs (§7),
+  an instance of the Lucas (1976) critique; the relief overlay is a documented judgement, not an estimate.
+- **Research practice.** The plan hashed before fitting, the deviations log and the reporting of failed rules follow
+  Harvey (2017); the adaptive design across rounds (§11) is the forking-paths risk he describes.
+
 ## Reproduce
 
 Everything here runs from public data: `scripts/00_download_sba.sh` (SBA 7(a) files and the Fed 2026 scenarios),
