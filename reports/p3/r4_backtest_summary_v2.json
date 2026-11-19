@@ -1,0 +1,542 @@
+{
+  "pass_rule": "realised-macro 24-month dollar forecast within +/-25% of actual (|ratio - 1| <= 0.25) at >= 6 of 8 origins",
+  "change_vs_43": "payoff logit fitted with dur4 at lag 0 (as scored); 43 fitted it with dur4 at lag L = 12",
+  "v2": {
+    "M1 | realised": {
+      "origins": 8,
+      "within_25pct": 2,
+      "within_25pct_excl_2019_12": 2,
+      "median_dollar_ratio": 1.8794379327123427,
+      "mean_abs_log_ratio_all": 0.6840291288720146,
+      "mean_abs_log_ratio_excl_2019_12": 0.4994372782461401
+    },
+    "M1v | realised": {
+      "origins": 8,
+      "within_25pct": 4,
+      "within_25pct_excl_2019_12": 4,
+      "median_dollar_ratio": 0.913844684461653,
+      "mean_abs_log_ratio_all": 0.3971013662586751,
+      "mean_abs_log_ratio_excl_2019_12": 0.3457346522714146
+    },
+    "M1r | realised": {
+      "origins": 8,
+      "within_25pct": 3,
+      "within_25pct_excl_2019_12": 3,
+      "median_dollar_ratio": 1.2322198955629684,
+      "mean_abs_log_ratio_all": 0.5047075704747638,
+      "mean_abs_log_ratio_excl_2019_12": 0.38498615946429393
+    },
+    "M0 | realised": {
+      "origins": 8,
+      "within_25pct": 2,
+      "within_25pct_excl_2019_12": 2,
+      "median_dollar_ratio": 2.666422608036918,
+      "mean_abs_log_ratio_all": 0.7649530908679774,
+      "mean_abs_log_ratio_excl_2019_12": 0.6805902552212562
+    },
+    "M1 | held at origin": {
+      "origins": 8,
+      "within_25pct": 2,
+      "within_25pct_excl_2019_12": 2,
+      "median_dollar_ratio": 1.8528696183878337,
+      "mean_abs_log_ratio_all": 0.5876041980604159,
+      "mean_abs_log_ratio_excl_2019_12": 0.5086800824500356
+    },
+    "M1v | held at origin": {
+      "origins": 8,
+      "within_25pct": 4,
+      "within_25pct_excl_2019_12": 4,
+      "median_dollar_ratio": 0.9974624744460533,
+      "mean_abs_log_ratio_all": 0.3563042521932649,
+      "mean_abs_log_ratio_excl_2019_12": 0.34676174701545637
+    },
+    "M1r | held at origin": {
+      "origins": 8,
+      "within_25pct": 3,
+      "within_25pct_excl_2019_12": 3,
+      "median_dollar_ratio": 1.3294447245135323,
+      "mean_abs_log_ratio_all": 0.4293708895053628,
+      "mean_abs_log_ratio_excl_2019_12": 0.4183298206307012
+    }
+  },
+  "v1_from_backtest_rolling_csv": {
+    "M1 | realised": {
+      "origins": 8,
+      "within_25pct": 2,
+      "within_25pct_excl_2019_12": 2,
+      "median_dollar_ratio": 1.853675943153882,
+      "mean_abs_log_ratio_all": 0.6791833536628935,
+      "mean_abs_log_ratio_excl_2019_12": 0.49341832075412934
+    },
+    "M1v | realised": {
+      "origins": 8,
+      "within_25pct": 4,
+      "within_25pct_excl_2019_12": 4,
+      "median_dollar_ratio": 0.9209196626539646,
+      "mean_abs_log_ratio_all": 0.39395346271694553,
+      "mean_abs_log_ratio_excl_2019_12": 0.34155935116348973
+    },
+    "M1r | realised": {
+      "origins": 8,
+      "within_25pct": 3,
+      "within_25pct_excl_2019_12": 3,
+      "median_dollar_ratio": 1.2357556900057283,
+      "mean_abs_log_ratio_all": 0.5088602032670166,
+      "mean_abs_log_ratio_excl_2019_12": 0.3892510968309963
+    },
+    "M0 | realised": {
+      "origins": 8,
+      "within_25pct": 2,
+      "within_25pct_excl_2019_12": 2,
+      "median_dollar_ratio": 2.666422608036918,
+      "mean_abs_log_ratio_all": 0.7649530908679774,
+      "mean_abs_log_ratio_excl_2019_12": 0.6805902552212562
+    },
+    "M1 | held at origin": {
+      "origins": 8,
+      "within_25pct": 2,
+      "within_25pct_excl_2019_12": 2,
+      "median_dollar_ratio": 1.846383909660992,
+      "mean_abs_log_ratio_all": 0.5925868550669222,
+      "mean_abs_log_ratio_excl_2019_12": 0.5134568695622035
+    },
+    "M1v | held at origin": {
+      "origins": 8,
+      "within_25pct": 4,
+      "within_25pct_excl_2019_12": 4,
+      "median_dollar_ratio": 1.0194366642627442,
+      "mean_abs_log_ratio_all": 0.36024768989994166,
+      "mean_abs_log_ratio_excl_2019_12": 0.3502160950849433
+    },
+    "M1r | held at origin": {
+      "origins": 8,
+      "within_25pct": 2,
+      "within_25pct_excl_2019_12": 2,
+      "median_dollar_ratio": 1.3569093383586455,
+      "mean_abs_log_ratio_all": 0.43194359378131825,
+      "mean_abs_log_ratio_excl_2019_12": 0.4203523760508108
+    }
+  },
+  "m1_realised_vs_held_relative_difference": {
+    "v2": {
+      "per_origin": {
+        "2009-12": -0.1865985114707187,
+        "2011-12": -0.013630316748198146,
+        "2013-12": -0.02214002379151403,
+        "2015-12": 0.02779772162455263,
+        "2017-12": -0.0007877096512974857,
+        "2019-12": 1.307348606488505,
+        "2021-12": 0.04141681992334356,
+        "2023-12": -0.02135679276837965
+      },
+      "origins_abs_lt_3pct": 5
+    },
+    "v1": {
+      "per_origin": {
+        "2009-12": -0.20126715799859107,
+        "2011-12": -0.012904051619185064,
+        "2013-12": -0.02260314894682236,
+        "2015-12": 0.027083755741585502,
+        "2017-12": 0.0023097935553348936,
+        "2019-12": 1.3003052474789891,
+        "2021-12": 0.01983236772055652,
+        "2023-12": -0.01217233719207056
+      },
+      "origins_abs_lt_3pct": 6
+    }
+  },
+  "per_origin_dollar_ratios": [
+    {
+      "origin": "2009-12",
+      "model": "M1",
+      "macro": "realised",
+      "dollar_ratio_v2": 0.9571732336703953,
+      "dollar_ratio_v1": 0.9810996073537492
+    },
+    {
+      "origin": "2009-12",
+      "model": "M0",
+      "macro": "realised",
+      "dollar_ratio_v2": 0.9357243052144948,
+      "dollar_ratio_v1": 0.9357243052144948
+    },
+    {
+      "origin": "2009-12",
+      "model": "M1v",
+      "macro": "realised",
+      "dollar_ratio_v2": 0.9192366456479693,
+      "dollar_ratio_v1": 0.942862312196884
+    },
+    {
+      "origin": "2009-12",
+      "model": "M1r",
+      "macro": "realised",
+      "dollar_ratio_v2": 1.015737764578166,
+      "dollar_ratio_v1": 1.0411280706008277
+    },
+    {
+      "origin": "2009-12",
+      "model": "M1",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 1.1767537276100504,
+      "dollar_ratio_v1": 1.2283201037475542
+    },
+    {
+      "origin": "2009-12",
+      "model": "M1v",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 1.0907352981492098,
+      "dollar_ratio_v1": 1.1391134772616482
+    },
+    {
+      "origin": "2009-12",
+      "model": "M1r",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 1.2487532650262672,
+      "dollar_ratio_v1": 1.3034747237787812
+    },
+    {
+      "origin": "2011-12",
+      "model": "M1",
+      "macro": "realised",
+      "dollar_ratio_v2": 1.7980153182094385,
+      "dollar_ratio_v1": 1.7685321626757604
+    },
+    {
+      "origin": "2011-12",
+      "model": "M0",
+      "macro": "realised",
+      "dollar_ratio_v2": 2.4143727315257664,
+      "dollar_ratio_v1": 2.4143727315257664
+    },
+    {
+      "origin": "2011-12",
+      "model": "M1v",
+      "macro": "realised",
+      "dollar_ratio_v2": 1.5416365719475311,
+      "dollar_ratio_v1": 1.512933578212173
+    },
+    {
+      "origin": "2011-12",
+      "model": "M1r",
+      "macro": "realised",
+      "dollar_ratio_v2": 1.8211068126364964,
+      "dollar_ratio_v1": 1.7912450117627023
+    },
+    {
+      "origin": "2011-12",
+      "model": "M1",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 1.8228614978127207,
+      "dollar_ratio_v1": 1.7916517290712983
+    },
+    {
+      "origin": "2011-12",
+      "model": "M1v",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 1.5594460415459308,
+      "dollar_ratio_v1": 1.5291554358768418
+    },
+    {
+      "origin": "2011-12",
+      "model": "M1r",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 1.8462720859716464,
+      "dollar_ratio_v1": 1.8146614973964537
+    },
+    {
+      "origin": "2013-12",
+      "model": "M1",
+      "macro": "realised",
+      "dollar_ratio_v2": 0.5603220361063286,
+      "dollar_ratio_v1": 0.5558929150284777
+    },
+    {
+      "origin": "2013-12",
+      "model": "M0",
+      "macro": "realised",
+      "dollar_ratio_v2": 0.9044536213535204,
+      "dollar_ratio_v1": 0.9044536213535204
+    },
+    {
+      "origin": "2013-12",
+      "model": "M1v",
+      "macro": "realised",
+      "dollar_ratio_v2": 0.3528298714987553,
+      "dollar_ratio_v1": 0.3496697685565422
+    },
+    {
+      "origin": "2013-12",
+      "model": "M1r",
+      "macro": "realised",
+      "dollar_ratio_v2": 0.376217380683388,
+      "dollar_ratio_v1": 0.3732435331042033
+    },
+    {
+      "origin": "2013-12",
+      "model": "M1",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 0.5730084569765276,
+      "dollar_ratio_v1": 0.5687484202854599
+    },
+    {
+      "origin": "2013-12",
+      "model": "M1v",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 0.3599683928361124,
+      "dollar_ratio_v1": 0.356946584984518
+    },
+    {
+      "origin": "2013-12",
+      "model": "M1r",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 0.38473543230812846,
+      "dollar_ratio_v1": 0.3818751131661832
+    },
+    {
+      "origin": "2015-12",
+      "model": "M1",
+      "macro": "realised",
+      "dollar_ratio_v2": 1.0962213047301335,
+      "dollar_ratio_v1": 1.090070097842417
+    },
+    {
+      "origin": "2015-12",
+      "model": "M0",
+      "macro": "realised",
+      "dollar_ratio_v2": 1.526126457449391,
+      "dollar_ratio_v1": 1.526126457449391
+    },
+    {
+      "origin": "2015-12",
+      "model": "M1v",
+      "macro": "realised",
+      "dollar_ratio_v2": 0.6466445892853714,
+      "dollar_ratio_v1": 0.6430133033804145
+    },
+    {
+      "origin": "2015-12",
+      "model": "M1r",
+      "macro": "realised",
+      "dollar_ratio_v2": 1.0844195933820375,
+      "dollar_ratio_v1": 1.078334609224912
+    },
+    {
+      "origin": "2015-12",
+      "model": "M1",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 1.0665730052382578,
+      "dollar_ratio_v1": 1.0613254194204964
+    },
+    {
+      "origin": "2015-12",
+      "model": "M1v",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 0.6386529169346852,
+      "dollar_ratio_v1": 0.6355307954203433
+    },
+    {
+      "origin": "2015-12",
+      "model": "M1r",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 1.0550904818780757,
+      "dollar_ratio_v1": 1.0498993905772778
+    },
+    {
+      "origin": "2017-12",
+      "model": "M1",
+      "macro": "realised",
+      "dollar_ratio_v2": 2.3131154839448445,
+      "dollar_ratio_v1": 2.3098726815003228
+    },
+    {
+      "origin": "2017-12",
+      "model": "M0",
+      "macro": "realised",
+      "dollar_ratio_v2": 2.9739216346039807,
+      "dollar_ratio_v1": 2.9739216346039807
+    },
+    {
+      "origin": "2017-12",
+      "model": "M1v",
+      "macro": "realised",
+      "dollar_ratio_v2": 1.1289182349692828,
+      "dollar_ratio_v1": 1.1292324294301828
+    },
+    {
+      "origin": "2017-12",
+      "model": "M1r",
+      "macro": "realised",
+      "dollar_ratio_v2": 1.6288043435110022,
+      "dollar_ratio_v1": 1.6265208904177837
+    },
+    {
+      "origin": "2017-12",
+      "model": "M1",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 2.314938983724489,
+      "dollar_ratio_v1": 2.3045496475764016
+    },
+    {
+      "origin": "2017-12",
+      "model": "M1v",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 1.1298027207442958,
+      "dollar_ratio_v1": 1.126137701274375
+    },
+    {
+      "origin": "2017-12",
+      "model": "M1r",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 1.6300883798602854,
+      "dollar_ratio_v1": 1.6227726206767703
+    },
+    {
+      "origin": "2019-12",
+      "model": "M1",
+      "macro": "realised",
+      "dollar_ratio_v2": 7.2150713641149204,
+      "dollar_ratio_v1": 7.239401838727802
+    },
+    {
+      "origin": "2019-12",
+      "model": "M0",
+      "macro": "realised",
+      "dollar_ratio_v2": 3.8786724397954853,
+      "dollar_ratio_v1": 3.8786724397954857
+    },
+    {
+      "origin": "2019-12",
+      "model": "M1v",
+      "macro": "realised",
+      "dollar_ratio_v2": 2.131164116873307,
+      "dollar_ratio_v1": 2.139799736523803
+    },
+    {
+      "origin": "2019-12",
+      "model": "M1r",
+      "macro": "realised",
+      "dollar_ratio_v2": 3.8295888499515924,
+      "dollar_ratio_v1": 3.842502889132819
+    },
+    {
+      "origin": "2019-12",
+      "model": "M1",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 3.1269966505387994,
+      "dollar_ratio_v1": 3.147148338970142
+    },
+    {
+      "origin": "2019-12",
+      "model": "M1v",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 1.5266896874162743,
+      "dollar_ratio_v1": 1.5379784412691326
+    },
+    {
+      "origin": "2019-12",
+      "model": "M1r",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 1.6597356980138982,
+      "dollar_ratio_v1": 1.6704317365462666
+    },
+    {
+      "origin": "2021-12",
+      "model": "M1",
+      "macro": "realised",
+      "dollar_ratio_v2": 1.9608605472152472,
+      "dollar_ratio_v1": 1.938819723632004
+    },
+    {
+      "origin": "2021-12",
+      "model": "M0",
+      "macro": "realised",
+      "dollar_ratio_v2": 3.1023471679853767,
+      "dollar_ratio_v1": 3.1023471679853767
+    },
+    {
+      "origin": "2021-12",
+      "model": "M1v",
+      "macro": "realised",
+      "dollar_ratio_v2": 0.9084527232753368,
+      "dollar_ratio_v1": 0.8989770131110454
+    },
+    {
+      "origin": "2021-12",
+      "model": "M1r",
+      "macro": "realised",
+      "dollar_ratio_v2": 0.8095586693268135,
+      "dollar_ratio_v1": 0.800458919813133
+    },
+    {
+      "origin": "2021-12",
+      "model": "M1",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 1.8828777389629467,
+      "dollar_ratio_v1": 1.9011160902506856
+    },
+    {
+      "origin": "2021-12",
+      "model": "M1v",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 0.9041896507428968,
+      "dollar_ratio_v1": 0.9127356272511132
+    },
+    {
+      "origin": "2021-12",
+      "model": "M1r",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 0.7773627752492067,
+      "dollar_ratio_v1": 0.7848926403485814
+    },
+    {
+      "origin": "2023-12",
+      "model": "M1",
+      "macro": "realised",
+      "dollar_ratio_v2": 1.9788486372962069,
+      "dollar_ratio_v1": 1.9977142065679387
+    },
+    {
+      "origin": "2023-12",
+      "model": "M0",
+      "macro": "realised",
+      "dollar_ratio_v2": 2.9184724845480696,
+      "dollar_ratio_v1": 2.9184724845480696
+    },
+    {
+      "origin": "2023-12",
+      "model": "M1v",
+      "macro": "realised",
+      "dollar_ratio_v2": 0.8121369604870733,
+      "dollar_ratio_v1": 0.8206668777127922
+    },
+    {
+      "origin": "2023-12",
+      "model": "M1r",
+      "macro": "realised",
+      "dollar_ratio_v2": 1.3800201977438995,
+      "dollar_ratio_v1": 1.3931767707865446
+    },
+    {
+      "origin": "2023-12",
+      "model": "M1",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 2.022032772182582,
+      "dollar_ratio_v1": 2.02233069773464
+    },
+    {
+      "origin": "2023-12",
+      "model": "M1v",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 0.8160683649323888,
+      "dollar_ratio_v1": 0.8162944889436212
+    },
+    {
+      "origin": "2023-12",
+      "model": "M1r",
+      "macro": "held at origin",
+      "dollar_ratio_v2": 1.4101361840007973,
+      "dollar_ratio_v1": 1.4103439529385098
+    }
+  ]
+}

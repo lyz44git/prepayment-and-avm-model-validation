@@ -1,0 +1,38 @@
+{
+  "B_requested": 100,
+  "B_completed": 100,
+  "B_converged_used": 100,
+  "bootstrap_wall_seconds": 96.6,
+  "processes": 8,
+  "clusters": "calendar months 2006-01..2019-12",
+  "G": 168,
+  "fit_rows": 1499615,
+  "charge_offs": 81572,
+  "point_dur4_M1": 0.21463399908253433,
+  "point_dur4_M1v": 0.10264963966158966,
+  "point_difference": 0.11198435942094467,
+  "bootstrap_difference_p2_5": 0.09495766524887597,
+  "bootstrap_difference_p97_5": 0.16582117996406226,
+  "bootstrap_difference_mean": 0.12075555871124108,
+  "bootstrap_difference_sd": 0.018384444979367125,
+  "share_of_replicates_with_difference_le_0": 0.0,
+  "bootstrap_dur4_M1_p2_5_p97_5": [
+    0.16818992366137006,
+    0.31239436613723787
+  ],
+  "bootstrap_dur4_M1v_p2_5_p97_5": [
+    0.05019714204695005,
+    0.1803324850548092
+  ],
+  "bootstrap_sd_dur4_M1": 0.0365456720149935,
+  "bootstrap_sd_dur4_M1v": 0.034097721460375326,
+  "sandwich_month_cluster_se_difference": 0.013850316728461636,
+  "sandwich_month_cluster_corr_dur4_M1_M1v": 0.829532114519687,
+  "model_based_se_dur4_M1": 0.0035529894562289837,
+  "model_based_se_dur4_M1v": 0.003847935245968561,
+  "month_cluster_se_dur4_M1": 0.024321533615998436,
+  "month_cluster_se_dur4_M1v": 0.022885622774939798,
+  "newton_iterations_max": 5,
+  "seeds": "numpy default_rng(20261118 + b), b = 0..B-1",
+  "design": "columns fixed at the full-sample design; frequency-weighted Newton from full-sample estimates"
+}

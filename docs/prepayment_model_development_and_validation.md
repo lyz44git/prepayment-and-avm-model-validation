@@ -3,11 +3,13 @@
 Model development, a self-administered validation and a rate-scenario stress test, structured like an SR 11-7 /
 OCC 2011-12 validation report. The developer and the validator are the same person, so this is not an independent
 validation in the SR 11-7 sense. Every number comes from `scripts/05–09, 16, 17, 21, 22` and the CSVs in
-`reports/p1/`.
+`reports/p1/`. Figure numbers in this report ("Fig. 1" etc.) refer to `reports/p1/fig*.png`, not to the README figures.
 
 ## 1. Purpose and scope
 
 Prepayment is the behavioural input to MBS and whole-loan valuation, balance-sheet runoff and rate stress tests.
+In a lifetime credit-loss estimate it sets how long each loan stays on the books, and therefore how many months of
+default risk the allowance covers.
 A mortgage prepays when the home is sold (turnover) or the loan is refinanced, or replaced by a cash-out or
 other new first lien. This project estimates monthly hazards for both channels from 2022-05 to 2025-06, the
 fastest rate rise in 40 years followed by a plateau. It then:
@@ -148,6 +150,17 @@ Each row of the sensitivity table changes one assumption (`sensitivity_lockin.cs
   (−14% odds per pp). It is identified from 2022–25 time variation and may absorb other macro conditions; it is
   the effect the stress test uses.
 
+**Inference across months (added at review).** The standard errors above cluster by county, but the PMMS level and
+other market terms vary only by month, with about 26 training months. Refitting M1 with two-way (county × month)
+clustered standard errors and a leave-one-month-out jackknife (`scripts/34_p1_inference.py`,
+`r4_inference_twoway.csv`; coefficients and county-clustered errors reproduce the published ones exactly):
+- The refinance rate-gap odds ratio keeps its interval under every method (0.89; 95% CI 0.86–0.93), because it is
+  identified from differences between purchase cohorts within each month.
+- The PMMS-level standard errors about double under the jackknife (sale ×1.78, new lien ×2.07); both terms stay
+  significant (p = 0.0004).
+- The 3-month rate change and the new-lien month-of-year effects are not significant once month-level correlation is
+  allowed for, and the sale-side lock-in stays non-significant under every method.
+
 ### 5.5 Replication, stability, monitoring
 
 - **Replication.** A separate full-data IRLS fit (13.08M rows, no subsampling) reproduces the six key case-control
@@ -159,7 +172,7 @@ Each row of the sensitivity table changes one assumption (`sensitivity_lockin.cs
   - Sale scores: 0.035 (M1), 0.048 (M2). Stable.
   - **New-lien scores (M1): 0.275**, above the 0.25 action threshold, consistent with finding F2.
   - Inputs: gap 0.038, log appreciation 0.048, estimated LTV 0.059. Tenure 0.31 reflects mechanical ageing of a
-    closed cohort.
+    closed cohort, and the PMMS rate level 4.78 reflects the move to a rate range partly outside training (F10).
 
 ### 5.6 Benchmarks and cash-flow valuation (`ts_benchmark.csv`, Fig. 8; `valuation_risk.csv`, Fig. 7)
 
@@ -213,7 +226,7 @@ Each row of the sensitivity table changes one assumption (`sensitivity_lockin.cs
 | # | Severity | Status | Finding | Remediation |
 |---|---|---|---|---|
 | F1 | High | Open (accepted limitation) | Loan at risk unobserved for event properties; the household record for sold homes is the buyer's | Symmetric pre-window covariates only; property-level termination framed as a prepayment proxy; loan-level data needed for production |
-| F2 | High | **Open** | New-lien hazard under-predicted OOT by 26–30% (PSI 0.275), in every out-of-time month and most after the September 2024 rate dip | §9: lagged rate terms were not supported on the validation months, and monthly re-estimation leaves predicted ÷ actual at 0.71. Trailing three-month recalibration (pool-CPR MAE 0.43 → 0.30 pp) is the monitoring control |
+| F2 | High | **Open** | New-lien hazard under-predicted OOT by 30% (logit) and 26% (LightGBM) (PSI 0.275), in every out-of-time month. Two parts: a gap that pre-dates the rate dip (0.80 in 2024-01..06 for the specification refitted through 2023-12, `remediation/step2_selection_validation.csv`; 0.815 in 2024-07..08 for the published model) and a widening to 0.68 from September 2024 (`r4_f2_by_month.csv`). Recorded new first liens per sale rose from 0.57 to 0.86 while the share of sales with a recorded buyer lien stayed at 0.72–0.73, so a change in lien-recording coverage does not explain it | §9: lagged rate terms were not supported on the validation months, and monthly re-estimation leaves predicted ÷ actual at 0.71. Trailing three-month recalibration (pool-CPR MAE 0.43 → 0.30 pp) is the monitoring control |
 | F3 | Medium | Open | Sale lock-in coefficient not identified (sign flips across tenure specifications) | Do not use it for decisions; needs loan-level note rates or an exogenous rate shifter |
 | F4 | Medium | Open | Rate proxy is attenuated for the 61% of stayers who refinanced before 2022 | Regression-calibration sensitivity reported; loan-level rate history needed |
 | F5 | Medium | Open | M2 monotone constraints impose a lock-in sign the data do not support for sales | Keep M1 as champion; report M2 constrained and unconstrained in future |

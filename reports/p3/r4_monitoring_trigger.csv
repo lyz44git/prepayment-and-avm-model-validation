@@ -1,0 +1,25 @@
+table,origin,trailing_window,trailing_pred_n,trailing_actual_n,trailing_ratio_counts,m1r_factor_equivalent,trailing_pred_dollars,trailing_actual_dollars,trailing_ratio_dollars,trigger_counts,trigger_dollars,next24_ratio_realised_v2,next24_ratio_held_v2,miss_realised,miss_held,flag,missed,count
+per origin,2009-12,2008-01..2009-12,18708.33286970498,19853.0,0.9423428635322108,1.0611848815320482,1675434582.6028845,1573945119.0900002,1.0644809417316672,False,False,0.9571732336703952,1.1767537276100504,False,False,,,
+per origin,2011-12,2010-01..2011-12,21790.15409614148,22070.0,0.9873200768528083,1.0128427684643164,2203834465.0673857,1993381976.3199997,1.1055755952684514,False,False,1.7980153182094385,1.8228614978127209,True,True,,,
+per origin,2013-12,2012-01..2013-12,10844.009220093745,7281.0,1.4893571240343009,0.6714306353141459,1420392766.0699198,966996437.4799998,1.4688707331450717,True,True,0.5603220361063286,0.5730084569765276,True,True,,,
+per origin,2015-12,2014-01..2015-12,10417.149057601251,10305.0,1.0108829750219555,0.989234189029923,1867118423.5323935,2472263353.33,0.7552263479606611,False,True,1.0962213047301337,1.0665730052382578,False,False,,,
+per origin,2017-12,2016-01..2017-12,9973.579766325636,7023.0,1.420130964876212,0.7041604082530281,2116635663.9578211,1898813648.95,1.1147147931700785,True,False,2.3131154839448445,2.314938983724489,True,True,,,
+per origin,2019-12,2018-01..2019-12,8945.38818109695,4748.0,1.8840328940810764,0.5307762954360428,2188755048.32271,1034747955.7600002,2.115254285972584,True,True,7.21507136411492,3.1269966505387994,True,True,,,
+per origin,2021-12,2020-01..2021-12,8719.686710099546,3600.0,2.4221351972498737,0.41285886978374037,2328050214.0633645,769314098.8300003,3.0261374614139327,True,True,1.9608605472152472,1.8828777389629467,True,True,,,
+per origin,2023-12,2022-01..2023-12,6085.587464889863,4244.0,1.4339273008694307,0.6973854249052039,1895952982.7400587,1032995965.5099999,1.8353924371853754,True,True,1.9788486372962069,2.022032772182582,True,True,,,
+2x2 count trigger x realised-macro miss,,,,,,,,,,,,,,,,True,True,5.0
+2x2 count trigger x realised-macro miss,,,,,,,,,,,,,,,,True,False,0.0
+2x2 count trigger x realised-macro miss,,,,,,,,,,,,,,,,False,True,1.0
+2x2 count trigger x realised-macro miss,,,,,,,,,,,,,,,,False,False,2.0
+2x2 dollar trigger x realised-macro miss,,,,,,,,,,,,,,,,True,True,4.0
+2x2 dollar trigger x realised-macro miss,,,,,,,,,,,,,,,,True,False,1.0
+2x2 dollar trigger x realised-macro miss,,,,,,,,,,,,,,,,False,True,2.0
+2x2 dollar trigger x realised-macro miss,,,,,,,,,,,,,,,,False,False,1.0
+2x2 count trigger x held-macro miss,,,,,,,,,,,,,,,,True,True,5.0
+2x2 count trigger x held-macro miss,,,,,,,,,,,,,,,,True,False,0.0
+2x2 count trigger x held-macro miss,,,,,,,,,,,,,,,,False,True,1.0
+2x2 count trigger x held-macro miss,,,,,,,,,,,,,,,,False,False,2.0
+2x2 dollar trigger x held-macro miss,,,,,,,,,,,,,,,,True,True,4.0
+2x2 dollar trigger x held-macro miss,,,,,,,,,,,,,,,,True,False,1.0
+2x2 dollar trigger x held-macro miss,,,,,,,,,,,,,,,,False,True,2.0
+2x2 dollar trigger x held-macro miss,,,,,,,,,,,,,,,,False,False,1.0

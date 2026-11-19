@@ -1,0 +1,82 @@
+{
+  "sample": "OOT sales 2024-07..2025-08 with Vendor A market value and Vendor A AVM > $1,000 (as scripts/15)",
+  "n": 454526,
+  "clusters_counties": 2014,
+  "B": 1000,
+  "seed": 0,
+  "quantiles": "[2.5%, 50%, 97.5%] of the bootstrap distribution",
+  "challenger": "C3 blend (C1+C2)",
+  "best_usable_vendor": "Vendor A market value",
+  "point_estimate_full_sample": {
+    "challenger_MdAPE": 0.11323080902478433,
+    "mktval_MdAPE": 0.16789611562782297,
+    "avm_MdAPE": 0.3437453395061728,
+    "gbm_MdAPE": 0.11810837428382814,
+    "delta_MdAPE_challenger_minus_mktval": -0.054665306603038644
+  },
+  "bootstrap_B1000": {
+    "challenger_MdAPE": [
+      0.10883935292915045,
+      0.11327832307160562,
+      0.1178843524060441
+    ],
+    "challenger_PPE10": [
+      0.44014367423187045,
+      0.4543319085479392,
+      0.469118006070065
+    ],
+    "mktval_MdAPE": [
+      0.15552200708491654,
+      0.16772866004962778,
+      0.18021323817908222
+    ],
+    "mktval_PPE10": [
+      0.26371156190510553,
+      0.28691648277502957,
+      0.30951931635158386
+    ],
+    "avm_MdAPE": [
+      0.33519622550724637,
+      0.34405884076015725,
+      0.3526074380565235
+    ],
+    "avm_PPE10": [
+      0.07739117938350402,
+      0.08380402244678178,
+      0.09080651642024219
+    ],
+    "gbm_MdAPE": [
+      0.11339149862958033,
+      0.11815388406810257,
+      0.12298390702790864
+    ],
+    "gbm_PPE10": [
+      0.42559156699864625,
+      0.43982756528849987,
+      0.45437148430556984
+    ],
+    "delta_MdAPE_challenger_minus_mktval": [
+      -0.0663640311485921,
+      -0.05449425244509748,
+      -0.04340969504448807
+    ],
+    "delta_MdAPE_challenger_minus_mktval_se": 0.005932997017801463,
+    "share_of_draws_delta_below_0": 1.0
+  },
+  "reproduction_first_200_draws": {
+    "delta_MdAPE_challenger_minus_mktval": [
+      -0.06661472918624602,
+      -0.05427958259965995,
+      -0.0440275458694932
+    ],
+    "published_B200": [
+      -0.06661472918624602,
+      -0.05427958259965995,
+      -0.0440275458694932
+    ],
+    "max_abs_diff": 0.0,
+    "challenger_MdAPE_max_abs_diff": 0.0,
+    "mktval_MdAPE_max_abs_diff": 0.0,
+    "avm_MdAPE_max_abs_diff": 0.0
+  }
+}

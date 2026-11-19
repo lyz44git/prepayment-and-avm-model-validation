@@ -1,0 +1,107 @@
+{
+  "window": "2020-04..2021-12",
+  "origin": "2019-12",
+  "v2": {
+    "M1 | realised": {
+      "pred_dollars": 6315471998.255157,
+      "actual_dollars": 824179183.73,
+      "ratio": 7.6627414558969225,
+      "pred_n": 24719.448587533432,
+      "actual_n": 3776
+    },
+    "M1 | held at origin": {
+      "pred_dollars": 2531595924.3734155,
+      "actual_dollars": 824179183.73,
+      "ratio": 3.071657200702563,
+      "pred_n": 9620.596694645317,
+      "actual_n": 3776
+    },
+    "M1v | realised": {
+      "pred_dollars": 1793120459.9653294,
+      "actual_dollars": 824179183.73,
+      "ratio": 2.17564395626953,
+      "pred_n": 7133.562351174014,
+      "actual_n": 3776
+    },
+    "M1v | held at origin": {
+      "pred_dollars": 1233739354.6119752,
+      "actual_dollars": 824179183.73,
+      "ratio": 1.4969309817173768,
+      "pred_n": 4723.703264858841,
+      "actual_n": 3776
+    },
+    "M1r | realised": {
+      "pred_dollars": 3352102831.1639347,
+      "actual_dollars": 824179183.73,
+      "ratio": 4.067201522845157,
+      "pred_n": 13120.497346512713,
+      "actual_n": 3776
+    },
+    "M1r | held at origin": {
+      "pred_dollars": 1343711106.2799063,
+      "actual_dollars": 824179183.73,
+      "ratio": 1.6303628298383526,
+      "pred_n": 5106.384673468079,
+      "actual_n": 3776
+    },
+    "M0 | realised": {
+      "pred_dollars": 3142775777.247412,
+      "actual_dollars": 824179183.73,
+      "ratio": 3.813219066058069,
+      "pred_n": 10610.88542404388,
+      "actual_n": 3776
+    }
+  },
+  "v1_from_backtest_rolling_monthly_csv": {
+    "M1 | realised": {
+      "pred_dollars": 6337705671.404984,
+      "actual_dollars": 824179183.73,
+      "ratio": 7.689718202687837,
+      "pred_n": 24829.00281269993,
+      "actual_n": 3776
+    },
+    "M1 | held at origin": {
+      "pred_dollars": 2550016490.7995667,
+      "actual_dollars": 824179183.73,
+      "ratio": 3.094007396861104,
+      "pred_n": 9705.361563461007,
+      "actual_n": 3776
+    },
+    "M1v | realised": {
+      "pred_dollars": 1800950506.1958156,
+      "actual_dollars": 824179183.73,
+      "ratio": 2.1851443736363576,
+      "pred_n": 7174.525727987535,
+      "actual_n": 3776
+    },
+    "M1v | held at origin": {
+      "pred_dollars": 1244052329.7548516,
+      "actual_dollars": 824179183.73,
+      "ratio": 1.509444007217733,
+      "pred_n": 4772.980877607619,
+      "actual_n": 3776
+    },
+    "M1r | realised": {
+      "pred_dollars": 3363903937.832335,
+      "actual_dollars": 824179183.73,
+      "ratio": 4.081520140569754,
+      "pred_n": 13178.646132295957,
+      "actual_n": 3776
+    },
+    "M1r | held at origin": {
+      "pred_dollars": 1353488306.2874115,
+      "actual_dollars": 824179183.73,
+      "ratio": 1.6422257841576504,
+      "pred_n": 5151.375856521195,
+      "actual_n": 3776
+    },
+    "M0 | realised": {
+      "pred_dollars": 3142775777.247412,
+      "actual_dollars": 824179183.73,
+      "ratio": 3.813219066058069,
+      "pred_n": 10610.88542404388,
+      "actual_n": 3776
+    }
+  },
+  "finding_rule": "record a finding if ratio > 1.25"
+}

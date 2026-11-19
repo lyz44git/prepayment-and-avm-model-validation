@@ -172,3 +172,12 @@ for 24-month or quarterly charge-off forecasts. The vintage finding stays open.
 - **D6 without O1 (sensitivity, run at review).** `scripts/47_p3_lifetime_backtest.py --no-overlay`: the same counts
   (M1v 3, R2a 3, R2b 4 of 6; no model meets the rule), and the three candidates within ±25% at 2015–2019 (0.87–1.21)
   (`r3_lifetime_backtest_no_overlay.csv`, `r3_summary_no_overlay.json`).
+- **Payoff hazard specification.** The payoff logit includes the unlagged 4-quarter change in unemployment
+  (`src/mval/p3.py`, CreditDesign for cause "pif"); the plan listed only the prime rate and its 4-quarter change. The
+  term was in every fit from the first; it is logged here because the plan did not name it.
+- **24-month backtest script (43).** The payoff logit is fitted with the unemployment change at the charge-off lag but
+  scored with the unlagged value; scripts 45–47 are consistent. The corrected run is `scripts/48_p3_backtest_v2.py`
+  (report §14); the original tables are kept and the published figures use them.
+- **Adaptive design.** Each round's rule was written before it ran, but each round's candidates were designed after the
+  previous round's results, and overlay O1 with knowledge of 2020–21. Results across rounds are therefore not
+  independent tests.

@@ -179,3 +179,69 @@ def test_remediation_outcomes_as_reported():
     assert b.loc[("S3 fixed", "oot"), "new_lien_pred_over_actual"] == pytest.approx(0.83, abs=0.005)
     pool = json.loads((REM / "diag_stress_pool_ltv.json").read_text())
     assert pool["median_ltv"] == pytest.approx(0.30, abs=0.005) and pool["share_ltv_lt_0.5"] == pytest.approx(0.91, abs=0.005)
+
+
+def test_valuation_bottom_decile_and_findings_log():
+    d = pd.read_csv(P2 / "accuracy_by_price_tier_oot.csv")
+    b = d[(d.group == 1)].set_index("estimator")
+    blend = [i for i in b.index if i.startswith("C3")][0]
+    mv = [i for i in b.index if "market value" in i][0]
+    assert b.loc[blend, "median_ratio"] == pytest.approx(1.41, abs=0.005) and b.loc[blend, "MdAPE"] == pytest.approx(0.413, abs=5e-4)
+    assert b.loc[mv, "MdAPE"] == pytest.approx(0.306, abs=5e-4)
+    doc = (R.parent / "docs" / "avm_champion_challenger_validation.md").read_text()
+    log = doc[doc.index("## 8. Findings log"):]
+    assert [f"V{i}" for i in range(1, 10)] == __import__("re").findall(r"^\| (V\d+) \|", log, flags=__import__("re").M)
+
+
+def test_review_checks_prepayment():
+    i = pd.read_csv(P1 / "r4_inference_twoway.csv").set_index(["cause", "term"])
+    g = i.loc[("new_lien", "gap_pos")]
+    assert g.odds_ratio == pytest.approx(0.89, abs=0.005)
+    for lo, hi in [("or_ci95_lo_county", "or_ci95_hi_county"), ("or_ci95_lo_twoway", "or_ci95_hi_twoway"),
+                   ("or_ci95_lo_month_jackknife_t", "or_ci95_hi_month_jackknife_t")]:
+        assert round(g[lo], 2) == 0.86 and round(g[hi], 2) == 0.93
+    assert i.loc[("sale", "pmms"), "ratio_jackknife_to_county"] == pytest.approx(1.78, abs=0.005)
+    assert i.loc[("new_lien", "pmms"), "ratio_jackknife_to_county"] == pytest.approx(2.07, abs=0.005)
+    assert i.loc[("new_lien", "pmms"), "p_month_jackknife_t"] < 0.001 and i.loc[("new_lien", "pmms_chg3"), "p_month_jackknife_t"] > 0.05
+    w = json.loads((P1 / "r4_f2_summary.json").read_text())["windows"]
+    assert w["train_states | 2024-01..2024-06"]["new_lien_pred_over_actual_refit_to_2023_12"] == pytest.approx(0.80, abs=0.005)
+    pre = w["train_states | 2024-07..2024-08 (OOT, before the Sep-2024 dip)"]
+    post = w["train_states | 2024-09..2025-06 (OOT, from the dip)"]
+    assert pre["new_lien_pred_over_actual_published"] == pytest.approx(0.815, abs=5e-4)
+    assert post["new_lien_pred_over_actual_published"] == pytest.approx(0.68, abs=0.005)
+    assert w["train_states | 2024-01..2024-06"]["universe_new_liens_per_sale"] == pytest.approx(0.57, abs=0.005)
+    assert post["universe_new_liens_per_sale"] == pytest.approx(0.86, abs=0.005)
+    shares = [v["universe_sales_share_lien_dated_from_sale_month_minus1"] for k, v in w.items()
+              if k.startswith("train_states | 2024")]
+    assert min(shares) >= 0.715 and max(shares) <= 0.735
+
+
+def test_review_checks_valuation():
+    b = json.loads((P2 / "r4_bootstrap_b1000.json").read_text())
+    assert b["B"] == 1000
+    a = pd.read_csv(P2 / "r4_accuracy_spatial_oot.csv")
+    def md(win, est):
+        r = a[a.window.str.startswith(win) & a.estimator.str.contains(est, regex=False)]
+        return 100 * r.MdAPE.iloc[0]
+    assert md("2024-07", "C3") == pytest.approx(12.8, abs=0.05) and md("2024-07", "market value") == pytest.approx(18.5, abs=0.05)
+    assert md("2022-05", "C3") == pytest.approx(11.9, abs=0.05) and md("2022-05", "market value") == pytest.approx(9.3, abs=0.05)
+    m = pd.read_csv(P2 / "r4_monitoring_backtest.csv")
+    oot = m[m.window == "out of time"]
+    assert oot[oot.C1_trigger_single_month.astype(str) == "True"].month.min() == "2025-05"
+    assert oot[oot.C1_trigger_two_consecutive.astype(str) == "True"].month.min() == "2025-06"
+    assert max(oot.prediction_psi_c1.max(), oot.max_psi_inputs_not_expected_to_shift.max()) <= 0.012
+    d = pd.read_csv(P2 / "r4_disparity_exante_tier.csv")
+    full = d[d["sample"] == "all OOT sales"].set_index(["tier_basis", "estimator"]).Q5_minus_Q1_within_tier
+    avm = [e for t_, e in full.index if t_ == "realised_price" and "AVM" in e][0]
+    blend = [e for t_, e in full.index if t_ == "realised_price" and e.startswith("C3")][0]
+    assert 100 * full[("realised_price", avm)] == pytest.approx(-9.1, abs=0.05)
+    ex = d[d.tier_basis != "realised_price"].set_index(["tier_basis", "estimator"])
+    assert 100 * ex.loc[("prior_sale_indexed", avm), "Q5_minus_Q1_within_tier"] == pytest.approx(-1.0, abs=0.05)
+    assert 100 * ex.loc[("assessor_mv_2021", avm), "Q5_minus_Q1_within_tier"] == pytest.approx(-2.4, abs=0.05)
+    assert ex.loc[("prior_sale_indexed", avm), "boot_ci95_hi"] > 0 and ex.loc[("assessor_mv_2021", avm), "boot_ci95_hi"] > 0
+    assert 100 * ex.loc[("prior_sale_indexed", blend), "Q5_minus_Q1_within_tier"] == pytest.approx(2.6, abs=0.05)
+    t = pd.read_csv(P2 / "r4_accuracy_by_exante_tier.csv")
+    c3 = t[(t.decile == 1) & t.estimator.str.startswith("C3")].set_index(["tier_basis", "sample"])
+    assert c3.loc[("prior_sale_indexed", "sales with a prior recorded sale"), "MdAPE"] == pytest.approx(0.166, abs=5e-4)
+    assert c3.loc[("prior_sale_indexed", "sales with a prior recorded sale"), "median_ratio"] == pytest.approx(0.97, abs=0.005)
+    assert c3.loc[("realised_price", "all OOT sales"), "MdAPE"] == pytest.approx(0.413, abs=5e-4)

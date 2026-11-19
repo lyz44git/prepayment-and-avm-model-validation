@@ -1,0 +1,347 @@
+{
+  "checks": {
+    "published_oot_pred_over_actual_new_lien": 0.703332056964411,
+    "published_oot_pred_over_actual_sale": 1.038769782237453,
+    "refit_val_2024H1_pred_over_actual_new_lien": 0.8040461374396346,
+    "refit_val_2024H1_pred_over_actual_sale": 0.9602154555788881,
+    "remediation_step2_published_values": {
+      "new_lien": 0.8040461374396346,
+      "sale": 0.9602154555788881
+    }
+  },
+  "windows": {
+    "train_states | 2022-05..2023-12": {
+      "months": 20,
+      "pmms_avg": 6.455625,
+      "property_months": 10150216,
+      "sale_events": 22087,
+      "sale_pred_over_actual_published": 1.0035620605287427,
+      "sale_monthly_ratio_range_published": [
+        0.9242731049736603,
+        1.120496456472003
+      ],
+      "new_lien_events": 12835,
+      "new_lien_pred_over_actual_published": 1.0244914131559628,
+      "new_lien_monthly_ratio_range_published": [
+        0.8444680798251561,
+        1.1906340719454602
+      ],
+      "universe_new_liens_per_sale": 0.5854274410496509,
+      "universe_sales_share_lien_within_1m": 0.6465881448077073,
+      "universe_sales_share_lien_dated_from_sale_month_minus1": 0.7409195873520913,
+      "universe_hazard_new_lien": 0.001271726089096138,
+      "sample_hazard_new_lien": 0.0012645051100390375
+    },
+    "train_states | 2024-01..2024-06": {
+      "months": 6,
+      "pmms_avg": 6.868083333333334,
+      "property_months": 2926568,
+      "sale_events": 5620,
+      "sale_pred_over_actual_published": 0.9834228675676777,
+      "sale_pred_over_actual_refit_to_2023_12": 0.960215455578888,
+      "sale_monthly_ratio_range_published": [
+        0.9016941727143276,
+        1.0603855113699248
+      ],
+      "new_lien_events": 3236,
+      "new_lien_pred_over_actual_published": 0.9056739173129142,
+      "new_lien_pred_over_actual_refit_to_2023_12": 0.8040461374396342,
+      "new_lien_monthly_ratio_range_published": [
+        0.840242980493173,
+        1.040417596968328
+      ],
+      "universe_new_liens_per_sale": 0.5669288487166116,
+      "universe_sales_share_lien_within_1m": 0.623305232052842,
+      "universe_sales_share_lien_dated_from_sale_month_minus1": 0.7204501998957066,
+      "universe_hazard_new_lien": 0.0010697856331467169,
+      "sample_hazard_new_lien": 0.001105732038346623
+    },
+    "train_states | 2024-07 only": {
+      "months": 1,
+      "pmms_avg": 6.8475,
+      "property_months": 482037,
+      "sale_events": 1112,
+      "sale_pred_over_actual_published": 0.9398162431376891,
+      "sale_pred_over_actual_refit_to_2023_12": 0.9368327561689566,
+      "sale_monthly_ratio_range_published": [
+        0.9398162431376891,
+        0.9398162431376891
+      ],
+      "new_lien_events": 575,
+      "new_lien_pred_over_actual_published": 0.8509415520739918,
+      "new_lien_pred_over_actual_refit_to_2023_12": 0.829002601902828,
+      "new_lien_monthly_ratio_range_published": [
+        0.8509415520739918,
+        0.8509415520739918
+      ],
+      "universe_new_liens_per_sale": 0.5736314003246274,
+      "universe_sales_share_lien_within_1m": 0.6586616496975063,
+      "universe_sales_share_lien_dated_from_sale_month_minus1": 0.7341006344990408,
+      "universe_hazard_new_lien": 0.001289887810452355,
+      "sample_hazard_new_lien": 0.0011928544904229344
+    },
+    "train_states | 2024-07..2024-08 (OOT, before the Sep-2024 dip)": {
+      "months": 2,
+      "pmms_avg": 6.67375,
+      "property_months": 962349,
+      "sale_events": 2185,
+      "sale_pred_over_actual_published": 0.9888175838377612,
+      "sale_pred_over_actual_refit_to_2023_12": 0.992414428262758,
+      "sale_monthly_ratio_range_published": [
+        0.9398162431376891,
+        1.0395999611522813
+      ],
+      "new_lien_events": 1289,
+      "new_lien_pred_over_actual_published": 0.814746117798431,
+      "new_lien_pred_over_actual_refit_to_2023_12": 0.7997532189188199,
+      "new_lien_monthly_ratio_range_published": [
+        0.7855971336129304,
+        0.8509415520739918
+      ],
+      "universe_new_liens_per_sale": 0.6281883769811963,
+      "universe_sales_share_lien_within_1m": 0.6634664545816054,
+      "universe_sales_share_lien_dated_from_sale_month_minus1": 0.7293643129012101,
+      "universe_hazard_new_lien": 0.0013784011020893118,
+      "sample_hazard_new_lien": 0.00133943091331731
+    },
+    "train_states | 2024-09..2025-06 (OOT, from the dip)": {
+      "months": 10,
+      "pmms_avg": 6.6937,
+      "property_months": 4715842,
+      "sale_events": 8226,
+      "sale_pred_over_actual_published": 1.0520381451724554,
+      "sale_pred_over_actual_refit_to_2023_12": 1.048215111902207,
+      "sale_monthly_ratio_range_published": [
+        0.9440561663300895,
+        1.2170984249635808
+      ],
+      "new_lien_events": 7117,
+      "new_lien_pred_over_actual_published": 0.6831532281861259,
+      "new_lien_pred_over_actual_refit_to_2023_12": 0.6427329016440086,
+      "new_lien_monthly_ratio_range_published": [
+        0.6047147586660948,
+        0.8137898793482413
+      ],
+      "universe_new_liens_per_sale": 0.8643249778508739,
+      "universe_sales_share_lien_within_1m": 0.6983558250977743,
+      "universe_sales_share_lien_dated_from_sale_month_minus1": 0.7287331678879279,
+      "universe_hazard_new_lien": 0.0014968731847671362,
+      "sample_hazard_new_lien": 0.0015091684581459684
+    },
+    "train_states | 2024-07..2025-06 (full OOT)": {
+      "months": 12,
+      "pmms_avg": 6.6903749999999995,
+      "property_months": 5678191,
+      "sale_events": 10411,
+      "sale_pred_over_actual_published": 1.038769782237453,
+      "sale_pred_over_actual_refit_to_2023_12": 1.036503989651492,
+      "sale_monthly_ratio_range_published": [
+        0.9398162431376891,
+        1.2170984249635808
+      ],
+      "new_lien_events": 8406,
+      "new_lien_pred_over_actual_published": 0.7033320569644106,
+      "new_lien_pred_over_actual_refit_to_2023_12": 0.6668108446570032,
+      "new_lien_monthly_ratio_range_published": [
+        0.6047147586660948,
+        0.8509415520739918
+      ],
+      "universe_new_liens_per_sale": 0.8158230457476683,
+      "universe_sales_share_lien_within_1m": 0.6911896260686254,
+      "universe_sales_share_lien_dated_from_sale_month_minus1": 0.7288628036685258,
+      "universe_hazard_new_lien": 0.0014767983823843053,
+      "sample_hazard_new_lien": 0.001480401064353066
+    },
+    "train_states | 2024-01..2025-06": {
+      "months": 18,
+      "pmms_avg": 6.749611111111111,
+      "property_months": 8604759,
+      "sale_events": 16031,
+      "sale_pred_over_actual_published": 1.0193667717924317,
+      "sale_pred_over_actual_refit_to_2023_12": 1.0097594595854926,
+      "sale_monthly_ratio_range_published": [
+        0.9016941727143276,
+        1.2170984249635808
+      ],
+      "new_lien_events": 11642,
+      "new_lien_pred_over_actual_published": 0.7595748211018233,
+      "new_lien_pred_over_actual_refit_to_2023_12": 0.7049566449872381,
+      "new_lien_monthly_ratio_range_published": [
+        0.6047147586660948,
+        1.040417596968328
+      ],
+      "universe_new_liens_per_sale": 0.7288614244720101,
+      "universe_sales_share_lien_within_1m": 0.6674713673332018,
+      "universe_sales_share_lien_dated_from_sale_month_minus1": 0.7259235078875849,
+      "universe_hazard_new_lien": 0.001338410796957994,
+      "sample_hazard_new_lien": 0.0013529722331560943
+    },
+    "holdout_states | 2022-05..2023-12": {
+      "months": 20,
+      "pmms_avg": 6.455625,
+      "property_months": 2233762,
+      "sale_events": 4505,
+      "sale_pred_over_actual_published": 1.021854922265731,
+      "sale_monthly_ratio_range_published": [
+        0.8955448610741129,
+        1.211973095463763
+      ],
+      "new_lien_events": 2782,
+      "new_lien_pred_over_actual_published": 1.0128710984602636,
+      "new_lien_monthly_ratio_range_published": [
+        0.7624712477273459,
+        1.2580351207642342
+      ],
+      "universe_new_liens_per_sale": 0.6391225093849263,
+      "universe_sales_share_lien_within_1m": 0.6191705168928675,
+      "universe_sales_share_lien_dated_from_sale_month_minus1": 0.7159435460583309,
+      "universe_hazard_new_lien": 0.0012688907964900538,
+      "sample_hazard_new_lien": 0.0012454325930873567
+    },
+    "holdout_states | 2024-01..2024-06": {
+      "months": 6,
+      "pmms_avg": 6.868083333333334,
+      "property_months": 645045,
+      "sale_events": 1106,
+      "sale_pred_over_actual_published": 1.0364393645031211,
+      "sale_pred_over_actual_refit_to_2023_12": 1.0103107279240988,
+      "sale_monthly_ratio_range_published": [
+        0.906287619753829,
+        1.1270377571271233
+      ],
+      "new_lien_events": 737,
+      "new_lien_pred_over_actual_published": 0.8554397198433834,
+      "new_lien_pred_over_actual_refit_to_2023_12": 0.7587230434625106,
+      "new_lien_monthly_ratio_range_published": [
+        0.7628516150544028,
+        1.0408157470191717
+      ],
+      "universe_new_liens_per_sale": 0.6527417962003454,
+      "universe_sales_share_lien_within_1m": 0.5926885434657455,
+      "universe_sales_share_lien_dated_from_sale_month_minus1": 0.6934729418537708,
+      "universe_hazard_new_lien": 0.0011253479841345847,
+      "sample_hazard_new_lien": 0.001142555945709214
+    },
+    "holdout_states | 2024-07 only": {
+      "months": 1,
+      "pmms_avg": 6.8475,
+      "property_months": 106289,
+      "sale_events": 213,
+      "sale_pred_over_actual_published": 1.0159059303322449,
+      "sale_pred_over_actual_refit_to_2023_12": 1.0115253845612975,
+      "sale_monthly_ratio_range_published": [
+        1.0159059303322449,
+        1.0159059303322449
+      ],
+      "new_lien_events": 150,
+      "new_lien_pred_over_actual_published": 0.7043793554982417,
+      "new_lien_pred_over_actual_refit_to_2023_12": 0.6854429495463741,
+      "new_lien_monthly_ratio_range_published": [
+        0.7043793554982417,
+        0.7043793554982417
+      ],
+      "universe_new_liens_per_sale": 0.6189294576391351,
+      "universe_sales_share_lien_within_1m": 0.6338177951081176,
+      "universe_sales_share_lien_dated_from_sale_month_minus1": 0.7079049982275789,
+      "universe_hazard_new_lien": 0.0013145323585014332,
+      "sample_hazard_new_lien": 0.0014112466953306551
+    },
+    "holdout_states | 2024-07..2024-08 (OOT, before the Sep-2024 dip)": {
+      "months": 2,
+      "pmms_avg": 6.67375,
+      "property_months": 212196,
+      "sale_events": 448,
+      "sale_pred_over_actual_published": 0.9990162722569075,
+      "sale_pred_over_actual_refit_to_2023_12": 1.0014055358118175,
+      "sale_monthly_ratio_range_published": [
+        0.9837077736609633,
+        1.0159059303322449
+      ],
+      "new_lien_events": 321,
+      "new_lien_pred_over_actual_published": 0.705650526709052,
+      "new_lien_pred_over_actual_refit_to_2023_12": 0.6918922539421861,
+      "new_lien_monthly_ratio_range_published": [
+        0.7043793554982417,
+        0.7067655891746751
+      ],
+      "universe_new_liens_per_sale": 0.6751968503937008,
+      "universe_sales_share_lien_within_1m": 0.6374373657838225,
+      "universe_sales_share_lien_dated_from_sale_month_minus1": 0.7006979241231209,
+      "universe_hazard_new_lien": 0.0014228473917921353,
+      "sample_hazard_new_lien": 0.001512752361024713
+    },
+    "holdout_states | 2024-09..2025-06 (OOT, from the dip)": {
+      "months": 10,
+      "pmms_avg": 6.6937,
+      "property_months": 1039378,
+      "sale_events": 1736,
+      "sale_pred_over_actual_published": 1.030988524115215,
+      "sale_pred_over_actual_refit_to_2023_12": 1.0260717968879132,
+      "sale_monthly_ratio_range_published": [
+        0.9148503676078001,
+        1.2503153546632966
+      ],
+      "new_lien_events": 1659,
+      "new_lien_pred_over_actual_published": 0.6328097503925367,
+      "new_lien_pred_over_actual_refit_to_2023_12": 0.594709751620046,
+      "new_lien_monthly_ratio_range_published": [
+        0.5504459764325164,
+        0.8042191609708338
+      ],
+      "universe_new_liens_per_sale": 0.9458278826387592,
+      "universe_sales_share_lien_within_1m": 0.6759717809755186,
+      "universe_sales_share_lien_dated_from_sale_month_minus1": 0.7082087460287797,
+      "universe_hazard_new_lien": 0.0015578599592822524,
+      "sample_hazard_new_lien": 0.0015961469263347887
+    },
+    "holdout_states | 2024-07..2025-06 (full OOT)": {
+      "months": 12,
+      "pmms_avg": 6.6903749999999995,
+      "property_months": 1251574,
+      "sale_events": 2184,
+      "sale_pred_over_actual_published": 1.0244301134776135,
+      "sale_pred_over_actual_refit_to_2023_12": 1.02101205102615,
+      "sale_monthly_ratio_range_published": [
+        0.9148503676078001,
+        1.2503153546632966
+      ],
+      "new_lien_events": 1980,
+      "new_lien_pred_over_actual_published": 0.6446187853408202,
+      "new_lien_pred_over_actual_refit_to_2023_12": 0.6104650966934839,
+      "new_lien_monthly_ratio_range_published": [
+        0.5504459764325164,
+        0.8042191609708338
+      ],
+      "universe_new_liens_per_sale": 0.8898006816834617,
+      "universe_sales_share_lien_within_1m": 0.6679942205097806,
+      "universe_sales_share_lien_dated_from_sale_month_minus1": 0.7066538233550682,
+      "universe_hazard_new_lien": 0.0015349788395969002,
+      "sample_hazard_new_lien": 0.001582007935607483
+    },
+    "holdout_states | 2024-01..2025-06": {
+      "months": 18,
+      "pmms_avg": 6.749611111111111,
+      "property_months": 1896619,
+      "sale_events": 3290,
+      "sale_pred_over_actual_published": 1.028467265950018,
+      "sale_pred_over_actual_refit_to_2023_12": 1.0174145849620562,
+      "sale_monthly_ratio_range_published": [
+        0.906287619753829,
+        1.2503153546632966
+      ],
+      "new_lien_events": 2717,
+      "new_lien_pred_over_actual_published": 0.7018050307322037,
+      "new_lien_pred_over_actual_refit_to_2023_12": 0.6506808150478353,
+      "new_lien_monthly_ratio_range_published": [
+        0.5504459764325164,
+        1.0408157470191717
+      ],
+      "universe_new_liens_per_sale": 0.8092349833692036,
+      "universe_sales_share_lien_within_1m": 0.6424011935042067,
+      "universe_sales_share_lien_dated_from_sale_month_minus1": 0.7021742320485228,
+      "universe_hazard_new_lien": 0.0013957077347171627,
+      "sample_hazard_new_lien": 0.0014325491835735064
+    }
+  },
+  "first_month_refit_new_lien_ratio_below_0.90_train_states": "2024-01"
+}

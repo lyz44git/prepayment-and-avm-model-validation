@@ -155,3 +155,84 @@ def test_allowance_after_remediation():
     adds = [c[("severe", m)] - c[("baseline", m)] for m in ("M1v", "R2a", "R2b")]
     assert min(adds) == pytest.approx(0.0012, abs=1e-4) and max(adds) == pytest.approx(0.0082, abs=1e-4)
     assert c[("baseline", "M1")] == pytest.approx(0.060, abs=5e-4)
+
+
+def test_disclosures_added_at_second_review():
+    """Era-model cohort calibration, final-fit factor, payoff macro terms, hold-out states, PSI flags."""
+    v = _csv("remediation_vintage.csv").set_index("approval_fy")
+    assert v.loc[2014:2019, "m1v"].min() == pytest.approx(0.70, abs=0.005) and v.loc[2014:2019, "m1v"].max() == pytest.approx(0.82, abs=0.005)
+    assert v.loc[2022:2023, "m1v"].min() == pytest.approx(0.64, abs=0.005) and v.loc[2022:2023, "m1v"].max() == pytest.approx(0.71, abs=0.005)
+    assert v.loc[2009:2013, "m1v"].min() == pytest.approx(1.27, abs=0.005) and v.loc[2009:2013, "m1v"].max() == pytest.approx(1.78, abs=0.005)
+    assert v.loc[2000:2008, "m1v"].min() == pytest.approx(2.8, abs=0.05) and v.loc[2000:2008, "m1v"].max() == pytest.approx(8.8, abs=0.05)
+    share = v.loc[2014:2019, "chargeoffs"].sum() / v.chargeoffs.sum()
+    assert share == pytest.approx(0.62, abs=0.005)
+    c = _csv("r2_cecl_allowance.csv").set_index(["scenario", "model"]).factor
+    assert c[("baseline", "R2a")] == pytest.approx(1.29, abs=0.005)
+    k = _csv("m1_pif_coefficients.csv").set_index("Unnamed: 0").beta
+    assert k["dur4"] == pytest.approx(-0.107, abs=5e-4) and k["prime"] == pytest.approx(0.121, abs=5e-4)
+    e = _csv("eval_hazard.csv").query("cause == 'co'").set_index(["split", "model"])
+    ho, hoo = "hold-out states 2006-19", "hold-out states, out of time"
+    assert e.loc[(ho, "M1 logit"), "auc"] == pytest.approx(0.734, abs=5e-4) and e.loc[(ho, "M1 logit"), "pred_over_actual"] == pytest.approx(1.09, abs=0.005)
+    assert e.loc[(ho, "M2 LightGBM"), "pred_over_actual"] == pytest.approx(0.71, abs=0.005)
+    assert e.loc[(hoo, "M1 logit"), "pred_over_actual"] == pytest.approx(3.06, abs=0.005) and e.loc[(hoo, "M2 LightGBM"), "pred_over_actual"] == pytest.approx(1.77, abs=0.005)
+    ps = _csv("backtest_psi.csv").set_index("to").psi
+    assert ps["2011-12"] == pytest.approx(0.34, abs=0.005) and ps["2013-12"] == pytest.approx(0.40, abs=0.005) and ps["2023-12"] < 0.01
+    b = _csv("backtest_rolling.csv"); r = b[(b.model == "M1") & (b.macro == "realised")].set_index("origin").dollar_ratio
+    assert r["2023-12"] == pytest.approx(2.00, abs=0.005)
+    m = _csv("monthly_actuals.csv"); last = m[m.m == m.m.max()]
+    assert last.n_pif.sum() == 0
+
+
+def test_robustness_checks_added_at_review():
+    s = json.loads((P3 / "r4_backtest_summary_v2.json").read_text())
+    v2 = s["v2"]
+    assert [v2[f"{m} | realised"]["within_25pct"] for m in ("M0", "M1", "M1r", "M1v")] == [2, 2, 3, 4]
+    assert v2["M1 | realised"]["mean_abs_log_ratio_all"] == pytest.approx(0.684, abs=5e-4)
+    assert v2["M1 | realised"]["mean_abs_log_ratio_excl_2019_12"] == pytest.approx(0.499, abs=5e-4)
+    rd = s["m1_realised_vs_held_relative_difference"]
+    assert rd["v1"]["origins_abs_lt_3pct"] == 6 and rd["v2"]["origins_abs_lt_3pct"] == 5
+    assert rd["v2"]["per_origin"]["2021-12"] == pytest.approx(0.041, abs=5e-4)
+    pc = json.loads((P3 / "r4_pandemic_check_v2.json").read_text())
+    assert pc["v2"]["M1 | realised"]["ratio"] == pytest.approx(7.66, abs=0.005)
+    assert pc["v1_from_backtest_rolling_monthly_csv"]["M1 | realised"]["ratio"] == pytest.approx(7.69, abs=0.005)
+    t = _csv("r4_monitoring_trigger.csv")
+    def cells(tab):
+        q = t[t.table == tab]
+        return {(str(f), str(m)): int(c) for f, m, c in zip(q.flag, q.missed, q["count"])}
+    c = cells("2x2 count trigger x realised-macro miss")
+    assert c == {("True", "True"): 5, ("True", "False"): 0, ("False", "True"): 1, ("False", "False"): 2}
+    d = cells("2x2 dollar trigger x realised-macro miss")
+    assert d == {("True", "True"): 4, ("True", "False"): 1, ("False", "True"): 2, ("False", "False"): 1}
+    po = t[t.table == "per origin"].set_index("origin")
+    assert po.loc["2013-12", "trailing_ratio_counts"] == pytest.approx(1.49, abs=0.005)
+    assert po.loc["2013-12", "next24_ratio_realised_v2"] == pytest.approx(0.56, abs=0.005)
+    p = _csv("r4_psi_exante.csv"); q = p[p.table == "2x2 PSI>0.25 x realised-macro miss at T1"]
+    assert {(str(f), str(m)): int(n) for f, m, n in zip(q.flag, q.missed, q["count"])} == {
+        ("True", "True"): 2, ("True", "False"): 0, ("False", "True"): 4, ("False", "False"): 1}
+    a = _csv("r4_allowance_sensitivities.csv"); a["pct"] = 100 * a.loss_over_balance
+    v = a.set_index(["variant", "model", "scenario"]).pct
+    for key, want in {("base", "M1v", "baseline"): 3.37, ("base", "R2a", "baseline"): 4.36, ("ii", "M1v", "baseline"): 3.55,
+                      ("ii", "R2a", "severe"): 5.40, ("iii", "M1v", "baseline"): 3.36, ("iv", "R2a", "baseline"): 3.89,
+                      ("iv", "R2a", "severe"): 4.71, ("v", "M1v", "baseline"): 3.91, ("v", "M1v", "severe"): 4.64}.items():
+        assert v[key] == pytest.approx(want, abs=0.005), key
+    assert v[("i", "M1v", "increment: charge-off channel")] == pytest.approx(0.43, abs=0.005)
+    assert v[("i", "M1v", "increment: payoff channel")] == pytest.approx(0.20, abs=0.005)
+    assert v[("i", "R2b", "increment: charge-off channel")] == pytest.approx(-0.06, abs=0.005)
+    lag = json.loads((P3 / "r4_recording_lag.json").read_text())
+    assert lag["months_with_zero_recorded_payoffs_2006-01..2026-09"] == ["2026-09"]
+    assert lag["payoff_oot_pred_over_actual_M1"]["2020-01..2026-08 (excluding 2026-09)"] == pytest.approx(1.105, abs=5e-4)
+    assert lag["typical_month_2025-09..2026-08"]["mean_payoffs_as_share_of_2026-09_active_book"] == pytest.approx(0.0099, abs=5e-5)
+    i = _csv("r4_inference_month_clustered.csv").set_index(["model", "term"])
+    assert i.loc[("M1", "dur4"), "z_month_cluster"] == pytest.approx(8.8, abs=0.05)
+    assert i.loc[("M1v", "dur4"), "z_month_cluster"] == pytest.approx(4.5, abs=0.05)
+    assert i.loc[("R2b", "dx"), "z_month_cluster"] == pytest.approx(-3.7, abs=0.05)
+    assert i.xs("bbb_spread", level="term").z_month_cluster.abs().max() < 1
+    eras = i.loc[[k for k in i.index if k[0] == "M1v" and k[1].startswith("era")]].z_month_cluster.abs()
+    assert eras.min() == pytest.approx(4.2, abs=0.05) and eras.max() == pytest.approx(13.2, abs=0.05)
+    r = i.cluster_over_model_se
+    assert r.min() >= 3.9 and r.max() <= 7.5
+    b = json.loads((P3 / "r4_dur4_difference_bootstrap.json").read_text())
+    assert b["point_difference"] == pytest.approx(0.112, abs=5e-4)
+    assert b["bootstrap_difference_p2_5"] == pytest.approx(0.095, abs=5e-4) and b["bootstrap_difference_p97_5"] == pytest.approx(0.166, abs=5e-4)
+    k = _csv("r4_final_fit_coefficients.csv").set_index(["model", "term"]).beta
+    assert k[("M1v", "era4")] == pytest.approx(-1.14, abs=0.005) and k[("M1v", "era3")] == pytest.approx(-0.96, abs=0.005)

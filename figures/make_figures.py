@@ -242,6 +242,7 @@ def p_mae(ax, letter, title):
     items = [("Logit, fixed at 2024-06", t[("hazard: logit champion (M1)", "static")], GREY),
              ("Logit, re-estimated monthly", c[("S1 walk-forward", "oot")], GREY),
              ("Flat forecast", t[("naive", "static")], LIGHT),
+             ("Last month's CPR (rolling)", t[("naive", "rolling 1-month-ahead")], LIGHT),
              ("Rolling ARX(1) with PMMS", t[("ARX(1) + PMMS", "rolling 1-month-ahead")], LIGHT),
              ("Logit + trailing recalibration", t[("hazard: logit + rolling 3-month recalibration", "rolling 1-month-ahead")], NAVY)]
     hbars(ax, [i[0] for i in items], [i[1] for i in items], [i[2] for i in items], lambda v: f"{v:.2f}", vmax=0.55)
@@ -300,7 +301,7 @@ def p_drift(ax, letter, title):
     ax.plot(m.month, y, color=NAVY, lw=2.2, marker="o", ms=4, mec="white", mew=1, zorder=3)
     ax.text(m.month.iloc[0] + pd.Timedelta(days=12), y.iloc[0] - 0.2, f"{y.iloc[0]:.1f}%", fontsize=8, color=INK, fontweight="bold", va="top")
     ax.text(m.month.iloc[-1], y.iloc[-1] + 0.25, f"{y.iloc[-1]:.1f}%", fontsize=8, color=INK, fontweight="bold", ha="center")
-    ax.text(m.month.iloc[-1], 10.35, f"Input and prediction PSI\n≤ {psi_max:.3f} in all {len(ps)} months", fontsize=7.3, color=INK2,
+    ax.text(m.month.iloc[-1], 10.35, f"Prediction and stable-input PSI\n≤ {psi_max:.3f} in all {len(ps)} months", fontsize=7.3, color=INK2,
             ha="right", va="center", bbox=dict(boxstyle="round,pad=0.45", fc=PALE, ec="none"))
     ax.set_ylim(10, 13.6); month_axis(ax); ax.set_ylabel("Median error, LightGBM (%)"); clean(ax)
     panel(ax, letter, title)
@@ -327,7 +328,7 @@ def p_bt_overview(ax, letter, title):
     log_ratio_axis(ax)
     k = org.index("2019-12"); v = b[(b.model == "M1") & (b.origin == "2019-12")].dollar_ratio.iloc[0]
     ax.annotate(f"{v:.1f}× (payment relief)", (k, v), xytext=(8, -2), textcoords="offset points", ha="left", va="center", fontsize=7.3, color=ORANGE, fontweight="bold")
-    ax.text(len(org) - 0.6, 1.0, "±25%", fontsize=7, color=MUTED, va="center")
+    ax.text(len(org) - 0.35, 1.27, "±25%", fontsize=7, color=MUTED, va="bottom", ha="right")
     ax.set_xticks(x, [o[:4] for o in org]); ax.set_xlim(-0.4, len(org) - 0.3)
     ax.set_xlabel("Forecast origin (December)"); ax.set_ylabel("24-month charge-off $: predicted ÷ actual"); clean(ax)
     legend(ax, [("Logit (champion)", NAVY, "line"), ("Logit + approval eras", BLUE, "dash")], loc="lower right")
@@ -366,13 +367,16 @@ def p_leak_auc(ax, letter, title):
 def p_vintage(ax, letter, title):
     v = csv(P3 + "vintage_pred_vs_actual.csv")
     v = v[(v.period == "in sample 2006-19") & v.approval_fy.between(2000, 2018)]
-    cols = [ORANGE if r < 0.9 else (BLUE if r > 1.1 else GREY) for r in v.m1_pred_over_actual]
+    cols = [ORANGE if 2006 <= fy <= 2008 else (BLUE if fy >= 2009 else GREY) for fy in v.approval_fy]
     ax.bar(v.approval_fy, v.m1_pred_over_actual, color=cols, width=0.72, zorder=2, lw=0)
     ax.axhline(1, color=MUTED, lw=0.8)
-    for _, r in v[v.approval_fy.isin([2007, 2014])].iterrows():
-        ax.text(r.approval_fy, r.m1_pred_over_actual + 0.05, f"{r.m1_pred_over_actual:.2f}", ha="center", fontsize=7.5, fontweight="bold", color=INK)
-    ax.text(2006.9, 1.12, "crisis cohorts", ha="center", fontsize=7, color=ORANGE, fontweight="bold")
-    ax.text(2013.5, 2.55, "post-crisis cohorts over-predicted", ha="center", fontsize=7, color=BLUE, fontweight="bold")
+    r06 = v.set_index("approval_fy").m1_pred_over_actual
+    top = r06.loc[2006:2008].max()
+    ax.text(2007, top + 0.04, f"{r06[2007]:.2f}", ha="center", va="bottom", fontsize=7.5, fontweight="bold", color=INK)
+    ax.annotate("FY2006–08\nunder-predicted", (2007, top + 0.12), xytext=(2003.6, 1.42), ha="center", va="bottom", fontsize=7,
+                color=ORANGE, fontweight="bold", linespacing=1.1, arrowprops=dict(arrowstyle="-", color=ORANGE, lw=0.8))
+    ax.text(r06.idxmax(), r06.max() + 0.05, f"{r06.max():.2f}", ha="center", fontsize=7.5, fontweight="bold", color=INK)
+    ax.text(2013.5, 2.55, "FY2009–18 over-predicted", ha="center", fontsize=7, color=BLUE, fontweight="bold")
     ax.set_ylim(0, 2.75); ax.set_xticks([2000, 2004, 2008, 2012, 2016], ["FY2000", "2004", "2008", "2012", "2016"])
     ax.set_ylabel("Predicted ÷ actual charge-offs"); ax.set_xlabel("Approval fiscal year (in sample, 2006–2019)"); clean(ax)
     panel(ax, letter, title)
@@ -453,7 +457,12 @@ def p_ur(ax, letter, title):
     ax.text(pd.Timestamp("2026-10-15"), 10.6, "data date", fontsize=7, color=MUTED)
     ax.axvspan(pd.Timestamp("2029-04-01"), pd.Timestamp("2030-03-31"), color=PALE, alpha=0.7, lw=0, zorder=0)
     ax.text(pd.Timestamp("2029-04-20"), 3.3, "reversion", fontsize=7, color=MUTED)
-    legend(ax, [("Baseline", NAVY, "line"), ("Severely adverse", ORANGE, "line")], loc="upper right")
+    pub = csv(P3 + "macro_2026_scenario_vs_published.csv"); pub = pub[pub.source == "published_fred"]
+    qd = pd.PeriodIndex(pub.quarter, freq="Q").to_timestamp(how="start") + pd.Timedelta(days=45)
+    ax.scatter(qd, pub.unemployment, s=26, color=INK, zorder=5)
+    ax.text(pd.Timestamp("2024-10-01"), 10.8, "dots:\npublished\n2026Q1–Q3;\nscenarios\nstart 2026Q1", fontsize=6.6, color=INK2,
+            ha="left", va="top", linespacing=1.1)
+    legend(ax, [("Baseline", NAVY, "line"), ("Severely adverse", ORANGE, "line"), ("Published", INK, "dot")], loc="upper right")
     ax.set_ylim(3, 11); ax.xaxis.set_major_locator(mdates.YearLocator(2)); ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     ax.set_ylabel("Unemployment rate (%)"); clean(ax)
     panel(ax, letter, title)
@@ -507,15 +516,17 @@ def p_pandemic2(ax, letter, title):
 def p_lifetime(ax, letter, title):
     lt = csv(P3 + "r3_lifetime_backtest.csv"); s = load(P3 + "r3_summary.json")
     org = lt.origin.drop_duplicates().tolist(); x = np.arange(len(org))
-    series = [("M0", "Lookup", GREY), ("M1", "Champion", NAVY), ("M1v", "Eras + overlay", BLUE), ("R2a", "… + recalibration", LIGHT)]
-    for i, (k, lab, c) in enumerate(series):
+    series = [("M0", "Lookup", GREY, "o"), ("M1", "Champion", NAVY, "o"), ("M1v", "Eras + overlay", BLUE, "o"),
+              ("R2a", "+ recalibration", LIGHT, "o"), ("R2b", "+ downturn exp.", BLUE, "D")]
+    for i, (k, lab, c, mk) in enumerate(series):
         r = lt[lt.model == k].set_index("origin").reindex(org).dollar_ratio
-        ax.scatter(x + (i - 1.5) * 0.15, r, s=40, color=c, edgecolor="white", linewidth=0.8, zorder=4)
+        ax.scatter(x + (i - 2) * 0.13, r, s=34 if mk == "D" else 40, marker=mk, color=c, edgecolor="white", linewidth=0.8, zorder=4)
     log_ratio_axis(ax, 0.25, 4)
     ax.set_xticks(x, [o[:4] for o in org]); ax.set_xlim(-0.5, len(org) - 0.5)
     ax.set_xlabel("Origin (December); outcomes to 2026-09"); ax.set_ylabel("Lifetime-to-date charge-off $: pred. ÷ actual"); clean(ax)
-    legend(ax, [(f"{lab}: {s[k]['within_25pct']}/6", c, "dot") for k, lab, c in series], loc="upper left", fontsize=7,
-           title="within ±25%", title_fontsize=7, alignment="left")
+    legend(ax, [(f"{lab} {s[k]['within_25pct']}/6", c, "diamond" if mk == "D" else "dot") for k, lab, c, mk in series],
+           loc="upper left", fontsize=6.8, title="within ±25% (rule 5/6)", title_fontsize=6.8, alignment="left",
+           handletextpad=0.4, labelspacing=0.35)
     panel(ax, letter, title)
 
 
@@ -561,13 +572,24 @@ SHORT_L = {"L1": "Loan term revised after default: a leak, removed",
            "L9": "Rate and collateral fields change across approval eras",
            "L10": "Fits shorter than a full cycle under-predict lifetime losses",
            "L11": "Business-age coding changes across approval eras",
-           "L12": "2026Q1–Q3 macro inputs are scenario values, not published data"}
+           "L12": "2026Q1–Q3 macro inputs are scenario values, not published data",
+           "L13": "Recording lag: September 2026 payoffs not yet in the data",
+           "L14": "Era model under-predicts recent cohorts out of time"}
+SHORT_V = {"V1": "Vendor A AVM 32% below sale prices; stated error uninformative",
+           "V2": "Vendor B value anchored to the sale price (leakage)",
+           "V3": "Vendor A market value and assessor value are stale, regressive",
+           "V4": "Unseen-state tie splits by period; challenger wins out of time",
+           "V5": "Error rose 11.1% to 12.9% while PSI stayed flat",
+           "V6": "Conformal intervals under-cover out of time (77.5%)",
+           "V7": "Bottom-decile error depends on how tiers are built",
+           "V8": "Minority-share gap not robust to tier definition",
+           "V9": "Vendor 'interest rate' is a market-rate lookup"}
 
 
 def p_findings(ax, doc_name, start, end, short, title):
     doc = (ROOT / "docs" / doc_name).read_text()
     log = doc[doc.index(start):doc.index(end)]
-    recs = re.findall(r"^\| ([FL]\d+) \| ([^|]+) \| ([^|]+) \|", log, flags=re.M)
+    recs = re.findall(r"^\| ([FLV]\d+) \| ([^|]+) \| ([^|]+) \|", log, flags=re.M)
     assert [r[0] for r in recs] == list(short), f"findings log of {doc_name} changed: update the labels"
     sev_c = {"High": ORANGE, "Medium": BLUE, "Low": GREY, "Info": LIGHT}
     n = len(recs)
@@ -613,7 +635,7 @@ def figure3():
 
 def figure4():
     fig, ax = plt.subplots(1, 3, figsize=(10.8, 3.5), dpi=300, layout="constrained", gridspec_kw=dict(width_ratios=[1.35, 0.9, 0.85]))
-    p_allowance2(ax[0], "A", "Lifetime loss after remediation")
+    p_allowance2(ax[0], "A", "Lifetime loss by model and scenario")
     p_ur(ax[1], "B", "Fed 2026 unemployment paths")
     p_severity_year(ax[2], "C", "Severity barely moves with the cycle")
     save(fig, "figures/figure4.png")
@@ -651,9 +673,11 @@ def figure8():
 
 
 def figure9():
-    fig, ax = plt.subplots(2, 1, figsize=(7.6, 7.9), dpi=300, layout="constrained", gridspec_kw=dict(height_ratios=[len(SHORT_L) + 0.7, len(SHORT_P) + 0.7]))
+    fig, ax = plt.subplots(3, 1, figsize=(7.6, 11.6), dpi=300, layout="constrained",
+                           gridspec_kw=dict(height_ratios=[len(SHORT_L) + 0.7, len(SHORT_P) + 0.7, len(SHORT_V) + 0.7]))
     p_findings(ax[0], "credit_loss_cecl_validation.md", "## 12. Findings log", "## 13.", SHORT_L, "Credit-loss model")
     p_findings(ax[1], "prepayment_model_development_and_validation.md", "## 7. Findings log", "## 8.", SHORT_P, "Prepayment model")
+    p_findings(ax[2], "avm_champion_challenger_validation.md", "## 8. Findings log", "**Disposition.**", SHORT_V, "Home-valuation models")
     save(fig, "figures/figure9.png")
 
 
