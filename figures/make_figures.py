@@ -314,7 +314,7 @@ def log_ratio_axis(ax, lo=0.25, hi=10):
     ax.set_yscale("log"); ax.set_ylim(lo, hi)
     ticks = [t for t in (0.25, 0.5, 1, 2, 4, 8) if lo <= t <= hi]
     ax.set_yticks(ticks, [f"{t:g}×" for t in ticks]); ax.minorticks_off()
-    ax.axhspan(0.8, 1.25, color=PALE, alpha=0.8, lw=0, zorder=0); ax.axhline(1, color=MUTED, lw=0.8, zorder=1)
+    ax.axhspan(0.75, 1.25, color=PALE, alpha=0.8, lw=0, zorder=0); ax.axhline(1, color=MUTED, lw=0.8, zorder=1)
 
 
 def p_bt_overview(ax, letter, title):
@@ -492,8 +492,8 @@ def p_pandemic2(ax, letter, title):
     r2 = csv(P3 + "r2_backtest_monthly.csv"); r2 = r2[r2.overlay & (r2.model == "M1v")].copy(); r2["month"] = pd.to_datetime(r2.month)
     act = mo[(mo.model == "M1") & (mo.macro == "realised")]
     ax.axvspan(pd.Timestamp("2020-04-01"), pd.Timestamp("2021-09-30"), color=PALE, alpha=0.7, lw=0, zorder=0)
-    ax.text(pd.Timestamp("2021-09-20"), 0.97, "SBA paid borrowers' loan payments", transform=ax.get_xaxis_transform(), fontsize=7,
-            color=MUTED, va="top", ha="right")
+    ax.text(pd.Timestamp("2020-04-12"), 0.985, "SBA paid borrowers' loan payments", transform=ax.get_xaxis_transform(), fontsize=7,
+            color=MUTED, va="top", ha="left")
     ax.plot(act.month, act.actual_dollars / 1e6, color=INK, lw=2.2, zorder=4)
     ax.plot(act.month, act.pred_dollars / 1e6, color=NAVY, lw=1.8, zorder=3)
     ax.plot(r2.month, r2.pred_dollars / 1e6, color=BLUE, lw=2.0, ls=(0, (4, 2)), zorder=3)

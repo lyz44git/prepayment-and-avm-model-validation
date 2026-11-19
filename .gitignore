@@ -11,3 +11,5 @@ __pycache__/
 .DS_Store
 # Finder / iCloud conflict copies
 * 2.*
+* [0-9].*
+* [0-9]

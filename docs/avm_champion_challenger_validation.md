@@ -42,7 +42,8 @@ Out-of-time window, 591,687 sales (`vendor_accuracy_oot.csv`). Metrics:
    sale price (34.4% median error). Its log error regressed on state-level market appreciation since 2022-04 has a
    slope of **−1.017 (s.e. 0.018)**: a slope of −1 is what a value fixed before 2022 produces, and an up-to-date
    value would give 0. The other vendor fields do not track appreciation either (slopes −1.35 to −1.39), so the slope
-   alone does not single the AVM out; its level does. If it were unbiased, its implied value date would be
+   alone does not single the AVM out; its level does. The test also gives a steep slope (−1.37) for the field that is anchored to the
+   sale price, so it is not a clean test of staleness and is reported as descriptive only. If it were unbiased, its implied value date would be
    **≈ 2020-08**. The vendor-stated AVM error has no ranking
    power for realised error: Spearman 0.045, AUC 0.498 for |error| > 20%, n = 455,397.
 2. **The Vendor B "estimated home value" is anchored to the recorded sale price, i.e. look-ahead.**

@@ -163,3 +163,9 @@ for 24-month or quarterly charge-off forecasts. The vintage finding stays open.
 - **L12.** The Fed files end their history in 2025Q4, so 2026Q1–Q3 carry scenario values in the estimation window
   and in each projection (`macro_2026_scenario_vs_published.csv`). Not re-run.
 - **Disposition.** Research and benchmark use only; outputs are expected gross SBA write-offs under stated scenarios.
+- **Corrections to the text above.** D4's "FY2009 to FY2019" should read FY2009–FY2018 (FY2019 is 2.73). D1's
+  "57% of its split gain" was read from the first-fit model and is not in a published table. "Within ±25%" in rule
+  (ii) and D6 is 0.75–1.25; rule (i) and the monitoring trigger use 0.80–1.25.
+- **Hashes.** The plan hash can be checked against `docs/credit_loss_plan.md`. The D5 and D6 hashes are of this
+  file in the private workspace before each run; the published copy has renamed paths, so they cannot be re-derived
+  from this repository.

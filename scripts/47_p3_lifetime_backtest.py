@@ -3,6 +3,8 @@
 At each origin T from 2009-12 to 2019-12, models fitted on data to T (relief overlay O1 in the macro inputs) project
 the book at risk at T month by month to 2026-09 with the realised macro path; predictions are compared with the
 book's actual charge-off dollars from T+1 to 2026-09. Writes reports/p3/r3_lifetime_backtest.csv and r3_summary.json.
+With --no-overlay (sensitivity added at review, not part of D6): the same run without O1, written to
+r3_lifetime_backtest_no_overlay.csv and r3_summary_no_overlay.json.
 """
 import sys, json, time; sys.path.insert(0, "scripts"); sys.path.insert(0, "src")
 from pathlib import Path
@@ -15,8 +17,9 @@ from mval.p3 import (W1, LOG_RATE, SAMPLE_RATE, HOLDOUT_STATES, mi, CreditDesign
 R = REPORTS / "p3"; OUT = WORK / "p3"; FED = Path("data_external/fed2026")
 L = json.loads((R / "champion.json").read_text())["lag_months"]; WIN = 36
 ORIG = [mi(y, 12) for y in (2009, 2011, 2013, 2015, 2017, 2019)]
+OV = "--no-overlay" not in sys.argv; SFX = "" if OV else "_no_overlay"
 T0 = time.time(); log = lambda *a: print(f"[{time.time() - T0:6.0f}s]", *a, flush=True)
-mm = macro_monthly(macro_quarterly(FED, "baseline", relief_overlay=True), W1 + 12)
+mm = macro_monthly(macro_quarterly(FED, "baseline", relief_overlay=OV), W1 + 12)
 cc = pd.read_parquet(OUT / "cc.parquet"); cc["franchise"] = cc.franchise.astype(bool)
 loans = pd.read_parquet(OUT / "loans.parquet"); loans = loans[loans.in_window].copy(); loans["franchise"] = loans.franchise.astype(bool)
 
@@ -104,15 +107,15 @@ for T in ORIG:
     res.append({"origin": month_label(T), "model": "R2a", "months": n, "book_loans": len(book), "pred_dollars": tot["M1v"] * f_v,
                 "actual_dollars": actual, "dollar_ratio": tot["M1v"] * f_v / actual, "factor": f_v})
     log(month_label(T), {r["model"]: round(r["dollar_ratio"], 3) for r in res[-5:]})
-out = pd.DataFrame(res); out.to_csv(R / "r3_lifetime_backtest.csv", index=False)
+out = pd.DataFrame(res); out.to_csv(R / f"r3_lifetime_backtest{SFX}.csv", index=False)
 oot = pd.read_csv(R / "r2_oot_eval.csv")
 summ = {"rule": "lifetime-to-date dollars within +/-25% at >= 5 of 6 origins (2009-2019); adoption also needs rule (i)"}
 for key in ("M0", "M1", "M1v", "R2a", "R2b"):
     a = out[out.model == key]; k = int(((a.dollar_ratio - 1).abs() <= 0.25).sum())
-    o = oot[(oot.overlay) & (oot.model == key) & (oot.window == "excluding 2020-04..2021-12")].pred_over_actual
+    o = oot[(oot.overlay == OV) & (oot.model == key) & (oot.window == "excluding 2020-04..2021-12")].pred_over_actual
     ri = bool(0.80 <= o.iloc[0] <= 1.25) if len(o) else None
     summ[key] = {"within_25pct": k, "mean_abs_log_ratio": float(np.abs(np.log(a.dollar_ratio)).mean()), "lifetime_rule": k >= 5,
                  "oot_excl_relief": float(o.iloc[0]) if len(o) else None, "rule_i": ri}
 q = [(v["within_25pct"], -v["mean_abs_log_ratio"], k) for k, v in summ.items() if isinstance(v, dict) and v["lifetime_rule"] and v["rule_i"]]
 summ["adopted_for_lifetime_allowance"] = max(q)[2] if q else None
-(R / "r3_summary.json").write_text(json.dumps(summ, indent=2)); log(json.dumps(summ, indent=1))
+(R / f"r3_summary{SFX}.json").write_text(json.dumps(summ, indent=2)); log(json.dumps(summ, indent=1))
