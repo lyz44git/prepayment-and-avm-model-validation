@@ -100,6 +100,16 @@ def test_remediation_rounds_as_reported():
     assert s2["M1v +O1"]["within_25pct"] == 4 and s2["M1v +O1"]["oot_excl_relief"] == pytest.approx(0.81, abs=0.005)
     assert s2["R2a +O1"]["within_25pct"] == 5 and s2["R2a +O1"]["oot_excl_relief"] == pytest.approx(0.73, abs=0.005)
     assert s2["M1v +O1"]["mean_abs_log_ratio"] == pytest.approx(0.357, abs=5e-4)
+    # no single candidate meets both rules
+    assert not any(v["rule_i"] and v["rule_ii"] for k, v in s2.items() if isinstance(v, dict) and "rule_i" in v)
+    with_o1 = [v["oot_excl_relief"] for k, v in s2.items() if k.endswith("+O1")]
+    assert min(with_o1) == pytest.approx(0.72, abs=0.005) and max(with_o1) == pytest.approx(0.83, abs=0.005)
+    assert s2["M1v"]["oot_excl_relief"] == pytest.approx(0.74, abs=0.005)  # same fit without O1: the gap is the overlay
+    m1 = json.loads((P3 / "backtest_summary.json").read_text())["M1"]["mean_abs_log_ratio"]
+    assert m1 == pytest.approx(0.68, abs=0.005) and s2["R2a +O1"]["mean_abs_log_ratio"] / m1 < 0.5
+    oot = _csv("r2_oot_eval.csv")
+    whole = oot[oot.overlay & (oot.model == "M1v") & (oot.window == "2020-01..2026-09")].pred_over_actual.iloc[0]
+    assert whole == pytest.approx(0.91, abs=0.005)
     s3 = json.loads((P3 / "r3_summary.json").read_text())
     assert s3["adopted_for_lifetime_allowance"] is None
     assert [s3[m]["within_25pct"] for m in ("M0", "M1", "M1v", "R2a", "R2b")] == [2, 0, 3, 3, 4]
@@ -108,6 +118,25 @@ def test_remediation_rounds_as_reported():
     assert late.min() == pytest.approx(0.94, abs=0.005) and late.max() == pytest.approx(1.22, abs=0.005)
     early = lt[lt.origin.isin(["2009-12", "2011-12", "2013-12"]) & lt.model.isin(["M1", "M1v", "R2a", "R2b"])].dollar_ratio
     assert (early < 0.7).sum() == 11
+
+
+def test_input_checks_added_at_review():
+    """L11: business-age coding by approval year; L12: 2026Q1-Q3 scenario inputs against published series."""
+    b = _csv("business_age_by_approval_fy.csv").set_index("approval_fy")
+    assert b.loc[2000:2004, "startup"].max() < 0.01 and b.loc[2012:, "startup"].min() == pytest.approx(0.176, abs=5e-4)
+    assert b.loc[2012:, "startup"].max() == pytest.approx(0.215, abs=5e-4)
+    assert b.loc[2000:2008, "new"].min() == pytest.approx(0.236, abs=5e-4) and b.loc[2000:2008, "new"].max() == pytest.approx(0.311, abs=5e-4)
+    assert b.loc[2019, "new"] == 0 and b.loc[2021:, "new"].min() == pytest.approx(0.130, abs=5e-4) and b.loc[2021:, "new"].max() == pytest.approx(0.180, abs=5e-4)
+    assert b.loc[2018, "unknown"] == pytest.approx(0.118, abs=5e-4) and b.loc[2019, "unknown"] == pytest.approx(0.136, abs=5e-4)
+    assert b.loc[2021:, "unknown"].max() < 0.01
+    m = _csv("macro_2026_scenario_vs_published.csv").set_index(["source", "quarter"])
+    assert (m.loc["fed_baseline", "unemployment"] == 4.6).all()
+    pub = m.loc["published_fred"]
+    assert pub.unemployment.min() == pytest.approx(4.13, abs=0.005) and pub.unemployment.max() == pytest.approx(4.33, abs=0.005)
+    assert m.loc["fed_baseline", "prime"].min() == 6.2 and m.loc["fed_baseline", "prime"].max() == 6.6
+    assert pub.prime.round(1).unique().tolist() == [6.8]
+    sa = m.loc["fed_severely_adverse", "unemployment"]
+    assert sa.min() == 5.9 and sa.max() == 8.2
 
 
 def test_allowance_after_remediation():

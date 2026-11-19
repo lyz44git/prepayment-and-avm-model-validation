@@ -1,0 +1,10 @@
+quarter,source,unemployment,prime,treasury_10y
+2026Q1,fed_baseline,4.6,6.6,4.1
+2026Q1,fed_severely_adverse,5.9,5.5,3.1
+2026Q1,published_fred,4.33,6.75,4.2
+2026Q2,fed_baseline,4.6,6.4,4.1
+2026Q2,fed_severely_adverse,7.2,3.1,2.7
+2026Q2,published_fred,4.27,6.75,4.42
+2026Q3,fed_baseline,4.6,6.2,4.1
+2026Q3,fed_severely_adverse,8.2,3.1,2.4
+2026Q3,published_fred,4.13,6.79,4.76

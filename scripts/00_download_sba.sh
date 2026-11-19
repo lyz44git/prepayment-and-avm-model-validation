@@ -11,3 +11,8 @@ for f in 2026_Final_Historic_Domestic.csv 2026_Final_Supervisory_Baseline_Domest
   curl -fsSL "https://www.federalreserve.gov/supervisionreg/files/$f" -o "data_external/fed2026/$f"
 done
 (cd data_external/sba && shasum -a 256 -c ../../reports/p3/SHA256SUMS.txt)
+# Published series for the input check of scripts/42e (finding L12); FRED revises these, so no checksum.
+mkdir -p data_external/fred_credit
+for id in UNRATE DPRIME DGS10; do
+  curl -fsSL "https://fred.stlouisfed.org/graph/fredgraph.csv?id=$id" -o "data_external/fred_credit/$id.csv"
+done

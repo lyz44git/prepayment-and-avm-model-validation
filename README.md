@@ -59,7 +59,7 @@ losses came from loans approved just before it. Adding approval-era effects halv
 from 0.215 to 0.103: about half of what the model read as sensitivity to the economy was the quality of the loans on
 the books.
 
-<sub><b>Methods.</b> SBA 7(a) term loans, FY2000 onward, as of 2026-09-30: 919,479 loans and 52,141,481 loan-months at risk in 2006-01 to 2026-09 (115,117 charge-offs, 572,070 payoffs). Cause-specific discrete-time hazards for charge-off and payoff on all events and 5% of other months, intercept corrected; fit 2006–2017, validation 2018–2019, out of time 2020-01 to 2026-09; nine hold-out states. Plan hashed before fitting; four documented deviations, including the removal of the term (<a href="docs/credit_loss_deviations.md">deviations</a>).</sub>
+<sub><b>Methods.</b> SBA 7(a) term loans, FY2000 onward, as of 2026-09-30: 919,479 loans and 52,141,481 loan-months at risk in 2006-01 to 2026-09 (115,117 charge-offs, 572,070 payoffs). Cause-specific discrete-time hazards for charge-off and payoff on all events and 5% of other months, intercept corrected; fit 2006–2017, validation 2018–2019, out of time 2020-01 to 2026-09; nine hold-out states. Plan hashed before fitting; six documented deviations, including the removal of the term and three remediation rounds (<a href="docs/credit_loss_deviations.md">deviations</a>).</sub>
 
 ## 2. Three rounds of fixes halved the forecast error, and lifetime losses hold once the model has seen a full cycle.
 
@@ -76,9 +76,12 @@ SBA made borrowers' loan payments ([report, §6–7](docs/credit_loss_cecl_valid
 Three rounds of fixes followed, each with its pass rule written down before it ran
 ([deviations D4–D6](docs/credit_loss_deviations.md)): approval-era effects, trailing recalibration, a term for loans
 still in the default pipeline after a downturn, and a documented overlay that treats the payment-relief quarters as
-absorbing the 2020 shock. Together they bring out-of-time predicted ÷ actual from 1.75 to 0.81 outside the relief
-months, halve the typical 24-month error and cut the 2019-origin forecast from 7.2 to 1.6 times actual. The 24-month
-rule (six of eight origins within ±25%) is still not met: the best model reaches five. The remaining misses alternate
+absorbing the 2020 shock. Outside the relief months, out-of-time predicted ÷ actual moves from 1.75 to 0.72–0.83
+across the candidates (0.81 for the era model with the overlay, 0.74 without it, because the overlay also shifts
+2022–23 inputs). The best candidate halves the typical 24-month error, and with the overlay, which uses hindsight
+about the relief programme, the 2019-origin forecast falls from 7.2 to 1.6 times actual. No candidate meets both
+pre-set rules: the era model meets the out-of-time rule but is within ±25% at four of eight origins, and the best
+backtest (five of eight, against six required) comes from a model at 0.73 out of time. The remaining misses alternate
 in sign at 2011, 2013 and 2015, when SBA wrote off crisis-era loans during an expansion, a schedule no input at the
 origin can predict.
 
@@ -174,9 +177,9 @@ a PSI endpoint and 19 tests ([`service/`](service)).
 
 <sub><b>Methods.</b> 2,418,184 arm's-length resales (2022-05 to 2025-08, 49 states and DC); training to 2024-03, calibration 2024-04 to 06. Hedonic OLS, LightGBM on 33 features, a PyTorch neighbour-attention network over the 32 nearest comparable sales, and their equal-weight blend (added after calibration-window results). Split-conformal intervals; county-cluster bootstrap; PSI against the calibration window.</sub>
 
-## 7. Twenty findings, fourteen still open: the use limits.
+## 7. Twenty-two findings, sixteen still open: the use limits.
 
-<img src="figures/figure9.png" alt="Two tables: the nine findings of the credit-loss model and the ten findings of the prepayment model, with severity and status." width="100%">
+<img src="figures/figure9.png" alt="Two tables: the twelve findings of the credit-loss model and the ten findings of the prepayment model, with severity and status." width="100%">
 
 **Figure 9. Findings logs of the credit-loss and prepayment models.** *Notes:* Severity and status are read from the findings logs of the two reports ([credit loss, §12](docs/credit_loss_cecl_validation.md#12-findings-log); [prepayment, §7](docs/prepayment_model_development_and_validation.md#7-findings-log)), which give the evidence and remediation for each finding; the labels are shortened.
 
@@ -205,7 +208,7 @@ What follows for use:
 
 | Study | Question | Report | Code |
 |---|---|---|---|
-| Credit loss and lifetime expected loss | When are small-business loans written off, how much is lost, and does a scenario-based lifetime loss estimate hold up out of time? | [validation report](docs/credit_loss_cecl_validation.md), [plan](docs/credit_loss_plan.md), [deviations](docs/credit_loss_deviations.md) | `scripts/40`–`44` |
+| Credit loss and lifetime expected loss | When are small-business loans written off, how much is lost, and does a scenario-based lifetime loss estimate hold up out of time? | [validation report](docs/credit_loss_cecl_validation.md), [plan](docs/credit_loss_plan.md), [deviations](docs/credit_loss_deviations.md) | `scripts/40`–`47` |
 | Prepayment hazard model | How fast do homes terminate their mortgage through sale or refinance in 2022–25, and how far can a model of it be trusted out of time, out of state and under stress? | [development and validation](docs/prepayment_model_development_and_validation.md) | `scripts/04`–`09`, `16`, `17`, `21`, `22` |
 | Remediation of two prepayment findings | Can the two most consequential open findings be closed under rules fixed before any refit? | [plan](docs/prepayment_model_remediation_plan.md); §9 of the report | `scripts/31`–`33` |
 | Home-valuation models | How accurate, current and even-handed are vendor home values against recorded sale prices, and can a challenger beat them out of time and out of geography? | [champion–challenger validation](docs/avm_champion_challenger_validation.md) | `scripts/10`–`15`, `23`, `24`; `service/` |

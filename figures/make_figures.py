@@ -559,7 +559,9 @@ SHORT_L = {"L1": "Loan term revised after default: a leak, removed",
            "L7": "Charge-off timing is administrative (write-off batches)",
            "L8": "Severity measured on original amount, not balance",
            "L9": "Rate and collateral fields change across approval eras",
-           "L10": "Fits shorter than a full cycle under-predict lifetime losses"}
+           "L10": "Fits shorter than a full cycle under-predict lifetime losses",
+           "L11": "Business-age coding changes across approval eras",
+           "L12": "2026Q1–Q3 macro inputs are scenario values, not published data"}
 
 
 def p_findings(ax, doc_name, start, end, short, title):
@@ -649,7 +651,7 @@ def figure8():
 
 
 def figure9():
-    fig, ax = plt.subplots(2, 1, figsize=(7.6, 7.2), dpi=300, layout="constrained", gridspec_kw=dict(height_ratios=[10.6, 10.6]))
+    fig, ax = plt.subplots(2, 1, figsize=(7.6, 7.9), dpi=300, layout="constrained", gridspec_kw=dict(height_ratios=[len(SHORT_L) + 0.7, len(SHORT_P) + 0.7]))
     p_findings(ax[0], "credit_loss_cecl_validation.md", "## 12. Findings log", "## 13.", SHORT_L, "Credit-loss model")
     p_findings(ax[1], "prepayment_model_development_and_validation.md", "## 7. Findings log", "## 8.", SHORT_P, "Prepayment model")
     save(fig, "figures/figure9.png")

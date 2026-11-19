@@ -147,3 +147,19 @@ model-origin pairs (R2b at 2009 is the exception). **Validator's
 recommendation (outside the pre-set adoption rule, labelled as such):** use M1v with O1 for the lifetime allowance
 only when it is fitted on at least one full credit cycle, report the range across M1v, R2a and R2b, and do not use it
 for 24-month or quarterly charge-off forecasts. The vintage finding stays open.
+
+## Review notes (2026-11-18): checks after the three rounds; no model refitted, no result changed
+
+- **Sampling design.** The 5% of non-event months is drawn from all loan-months by one hash, so each cause-specific
+  fit samples its non-events, including months with the competing event, at the same rate; the log 0.05 intercept
+  correction is the right one for that design (`scripts/41_p3_panel.py`).
+- **Reach of overlay O1.** Holding the levels before differencing (as D5 specifies) also changes the 4-quarter
+  unemployment change for 2021Q4–2022Q3 and, through the 12-month lag, charge-off inputs until 2023Q3. For M1v,
+  out-of-time predicted ÷ actual outside the relief months is 0.74 without O1 and 0.81 with it (`r2_oot_eval.csv`), so
+  its rule (i) result depends on the overlay. Results at the 2019-12 origin with O1 use knowledge of the relief
+  programme that was not available then; they are reported as a policy-hindsight sensitivity.
+- **L11.** Business-age categories are coded differently across approval eras (`scripts/42e_p3_input_checks.py`,
+  `business_age_by_approval_fy.csv`).
+- **L12.** The Fed files end their history in 2025Q4, so 2026Q1–Q3 carry scenario values in the estimation window
+  and in each projection (`macro_2026_scenario_vs_published.csv`). Not re-run.
+- **Disposition.** Research and benchmark use only; outputs are expected gross SBA write-offs under stated scenarios.
