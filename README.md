@@ -87,7 +87,7 @@ studies are logged as findings and fixed (L15, L16, V10).
 | Evaluation design: the test, not the model, produces the result | Price tiers sorted on the realised price; an unseen-state comparison that mixed vendor vintages; overlapping backtest origins | Change only the test: same homes with different tiers, same dates in both comparisons | Fixed by redesigning the test, as the reports do where they can |
 | Specification: the model is wrong about something the data could show | Cohort quality absorbed by the macro term (also regime change); no frailty or borrower heterogeneity | Add the term and re-test out of time | Partly: approval-era effects halve the unemployment coefficient and cut the error by a third to a half |
 
-**In the literature.** [Rajan, Seru and Vig (2015)](https://doi.org/10.1016/j.jfineco.2014.09.012) show a default model failing after a change in how lenders used soft
+**Each cause has precedents.** [Rajan, Seru and Vig (2015)](https://doi.org/10.1016/j.jfineco.2014.09.012) show a default model failing after a change in how lenders used soft
 information; the SBA forecasts also deteriorate across cohorts, though these data cannot say why the cohorts changed.
 [Demyanyk and Van Hemert (2011)](https://doi.org/10.1093/rfs/hhp033) document vintage effects in loan quality; the approval-era effects here are a
 conditional analogue. [Das, Duffie, Kapadia and Saita (2007)](https://doi.org/10.1111/j.1540-6261.2007.01202.x) and [Duffie, Eckner, Horel and Saita (2009)](https://doi.org/10.1111/j.1540-6261.2009.01495.x) find default
@@ -128,28 +128,28 @@ approval year.**
 Panel A: by final loan status, the share of SBA 7(a) term loans whose recorded term is not a whole number of years; loans cancelled before disbursement keep their approved terms. Panel B: AUC of the monthly charge-off hazard for the logit and LightGBM, in sample (2006–2019) and out of time (2020-01 to 2026-09), in the first fit (term-based features and censoring) and after the risk set was rebuilt without them. Panel C: predicted ÷ actual charge-off counts of the champion logit by approval fiscal year, in sample.
 </details>
 
-**The data first.** 90% of charged-off loans carry a term that is not a whole number of years, against 10% of loans
+**A field that leaked the outcome.** 90% of charged-off loans carry a term that is not a whole number of years, against 10% of loans
 cancelled before disbursement, which keep their approved terms: the term is revised after trouble. In the first fit,
 with term-based features and censoring, LightGBM reached an out-of-time AUC of 0.935; after the risk set was rebuilt
 without them, 0.737. On the same rows, adding the term features back alone restores the 0.935, so the leak is the
 field itself. Charge-off is an administrative write-off about four years after disbursement, partly in
 batches ([report, §2](docs/credit_loss_cecl_validation.md#2-what-the-data-record)).
 
-**The champion.** LightGBM ranks loans better than the logit (out-of-time AUC 0.737 against 0.681) but failed the
+**Ranking held; the level did not.** LightGBM ranks loans better than the logit (out-of-time AUC 0.737 against 0.681) but failed the
 calibration part of the pre-set replacement rule, so the logit stayed champion by default, for interpretability, not
 accuracy: both over-predict the validation months (logit 2.13, LightGBM 1.66 times actual) and the later years (2.79
 and 2.43). Out of time the logit predicts 2.8 times the recorded charge-off count over 2020-01 to 2026-09: 1.75 times
 outside April 2020 to December 2021, when SBA made borrowers' payments, and 6.7 times inside it. Ranked within each
 month, so that differences in level between months do not count, the AUCs are 0.710 and 0.741.
 
-**Why.** The champion under-predicts loans approved FY2006–08 (0.77, 0.69, 0.82) and over-predicts every cohort from FY2009
+**Cohorts, not only the economy.** The champion under-predicts loans approved FY2006–08 (0.77, 0.69, 0.82) and over-predicts every cohort from FY2009
 to FY2018 (1.28–2.34). Adding approval-era effects halves its unemployment coefficient, from 0.215 to 0.103 log-odds per
 point, so the forecast depends on how the model represents the loans on the books during the recession. With one
 downturn and approval era, loan age and calendar time overlapping, the data cannot say how much of that change is
 underwriting quality, and the era cut-points were set after seeing this table
 ([report, §5](docs/credit_loss_cecl_validation.md#5-did-the-loans-change-vintage-not-only-the-economy)).
 
-**In the literature.** The champion is a cause-specific discrete-time hazard estimated as a logit, as in [Shumway (2001)](https://doi.org/10.1086/209665)
+**Model form.** The champion is a cause-specific discrete-time hazard estimated as a logit, as in [Shumway (2001)](https://doi.org/10.1086/209665)
 and [Campbell, Hilscher and Szilagyi (2008)](https://doi.org/10.1111/j.1540-6261.2008.01416.x), on a case-control sample with the intercept correction of [King and Zeng
 (2001)](https://doi.org/10.1093/oxfordjournals.pan.a004868). Machine learning improves default prediction in [Fuster, Goldsmith-Pinkham, Ramadorai and Walther (2022)](https://doi.org/10.1111/jofi.13090); here
 LightGBM ranks better but is no better calibrated out of time, so it does not fix the level.
@@ -197,7 +197,7 @@ no pass count, and an outcome trigger on trailing predicted ÷ actual counts fir
 misses with no false alarm, where a PSI computed without future data caught two. With eight overlapping origins these
 counts describe the back-test; they are not a measured sensitivity and specificity.
 
-**In the literature.** The 2020–21 relief shows the forecast risk when policy changes loan payments directly, the
+**Policy, and how the fixes were designed.** The 2020–21 relief shows the forecast risk when policy changes loan payments directly, the
 concern of [Lucas (1976)](https://doi.org/10.1016/S0167-2231(76)80003-6); the size of the overlay is a modelling judgement, not an estimate. Each round's rule was fixed
 before it ran, in the spirit of the transparency [Harvey (2017)](https://doi.org/10.1111/jofi.12530) calls for, but each round was designed after seeing the
 last, which is the forking-paths risk he warns about.
@@ -260,7 +260,7 @@ already 20% before the September 2024 rate dip. New liens fall as the lock-in ga
 well as county leaves that interval unchanged; the market-rate level stays significant with standard errors about twice
 as wide.
 
-**Why, and in the literature.** The training months were not empty of refinancing incentives: by the purchase-cohort
+**Why new liens were missed.** The training months were not empty of refinancing incentives: by the purchase-cohort
 rate proxy, 1.15 million training property-months were at least a point in the money, yet they took new first liens
 only about 5% faster than owners near the money (0.138% against 0.132% a month). The proxy assigns each home the market rate of its purchase month, which is wrong
 for the 61% of owners with a lien who refinanced before 2022, so it measures the incentive poorly. [Berger, Milbradt, Tourre and
@@ -341,7 +341,7 @@ AVM's minority-share gap and of the extreme bottom-decile error
 ([report, §9](docs/avm_champion_challenger_validation.md#9-robustness-checks)). The
 LightGBM challenger is packaged as a FastAPI scoring service with a PSI endpoint and its tests ([`service/`](service)).
 
-**Why.** The vendor failures are measurement problems in third-party data: a value fixed years before the sale, and a
+**Measurement and test design.** The vendor failures are measurement problems in third-party data: a value fixed years before the sale, and a
 value that tracks the sale price. The two results that did not survive are evaluation-design problems: a comparison
 that mixed vendor vintages, and price tiers that sort on the outcome. Studies of assessment gaps, such as
 [Avenancio-León and Howard (2022)](https://doi.org/10.1093/qje/qjac009) for property taxes, depend on how values are compared with prices; here the measured
