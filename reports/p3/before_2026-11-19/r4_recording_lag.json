@@ -1,0 +1,26 @@
+{
+  "payoff_oot_pred_over_actual_M1": {
+    "2020-01..2026-09 (eval_hazard.csv)": 1.1172797362694264,
+    "2020-01..2026-09 (recomputed from monthly_hazard_pred_vs_actual.csv)": 1.1172797362694262,
+    "2020-01..2026-08 (excluding 2026-09)": 1.1046661446813126
+  },
+  "2026-09": {
+    "recorded_payoffs_all_states": 0,
+    "recorded_chargeoffs_all_states": 381,
+    "at_risk_all_states": 232673,
+    "M1_predicted_payoffs_non_holdout": 2029.7287039928644,
+    "recorded_payoffs_non_holdout": 0
+  },
+  "typical_month_2025-09..2026-08": {
+    "mean_payoffs_all_states": 2292.8333333333335,
+    "min_payoffs_all_states": 2048,
+    "max_payoffs_all_states": 2495,
+    "mean_at_risk_all_states": 231196.41666666666,
+    "mean_monthly_payoff_rate_all_states": 0.009916038314648986,
+    "mean_payoffs_as_share_of_2026-09_active_book": 0.009870479109626391,
+    "active_book_loans_2026-09": 232292
+  },
+  "months_with_zero_recorded_payoffs_2006-01..2026-09": [
+    "2026-09"
+  ]
+}

@@ -29,7 +29,11 @@ def numeric_reference(x: pd.Series, n_bins: int = 10) -> dict:
 def categorical_reference(x: pd.Series) -> dict:
     vc = x.astype("Int64").value_counts(normalize=True, dropna=False)
     cats = [int(c) for c in vc.index if pd.notna(c)]
-    return {"kind": "categorical", "categories": cats, "shares": [float(vc[c]) for c in cats] + [0.0]}
+    shares = [float(vc[c]) for c in cats]
+    # the last bin is "other or missing" in current_shares, so the reference puts its missing share there too
+    # (it was set to 0, which made a distribution with missing values drift against itself; the stored reference
+    # has no missing categorical values, so no published PSI changes)
+    return {"kind": "categorical", "categories": cats, "shares": shares + [max(0.0, 1.0 - sum(shares))]}
 
 
 def _numeric_shares(v: np.ndarray, edges: np.ndarray) -> np.ndarray:

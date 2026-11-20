@@ -1,0 +1,13 @@
+history,model,scenario,loss_over_balance,factor
+as published,M1v,baseline,0.034602895410399355,
+as published,R2a,baseline,0.04476616364821215,1.2937114977597621
+as published,M1v,severe,0.03870824217485556,
+as published,R2a,severe,0.050077297959679974,1.2937114977597621
+as published,R2b,baseline,0.03471724762327758,
+as published,R2b,severe,0.034226714259097346,
+published history to 2026Q3,M1v,baseline,0.0345273528613665,
+published history to 2026Q3,R2a,baseline,0.04466843338395827,1.2937114977597621
+published history to 2026Q3,M1v,severe,0.0395087694218875,
+published history to 2026Q3,R2a,severe,0.051112949263435174,1.2937114977597621
+published history to 2026Q3,R2b,baseline,0.03477846309020535,
+published history to 2026Q3,R2b,severe,0.03525377852297191,

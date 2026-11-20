@@ -3,7 +3,7 @@
 At each origin T from 2009-12 to 2019-12, models fitted on data to T (relief overlay O1 in the macro inputs) project
 the book at risk at T month by month to 2026-09 with the realised macro path; predictions are compared with the
 book's actual charge-off dollars from T+1 to 2026-09. Writes reports/p3/r3_lifetime_backtest.csv and r3_summary.json.
-With --no-overlay (sensitivity added at review, not part of D6): the same run without O1, written to
+With --no-overlay (sensitivity, not part of D6): the same run without O1, written to
 r3_lifetime_backtest_no_overlay.csv and r3_summary_no_overlay.json.
 """
 import sys, json, time; sys.path.insert(0, "scripts"); sys.path.insert(0, "src")

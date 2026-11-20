@@ -3,7 +3,11 @@ properties still at risk at 2025-06, under rate and house-price scenarios, with 
 
 Pool for the balance runoff is ILLUSTRATIVE: each at-risk property is assumed to carry its purchase-money
 loan (80% LTV, 30-year level pay at the purchase-month PMMS), because the actual lien at risk is not observed
-for every property. Count-based termination rates do not depend on that assumption."""
+for every property. Count-based termination rates do not depend on that assumption.
+
+The count-based CPR averages each month's hazard over the starting pool (every home weighted equally, a rate
+standardised to the starting composition). Since 2026-11-19 the script also reports the survival-weighted CPR, which weights each
+home by its probability of still being in the pool at the start of the month: the pool's actual run-off rate."""
 import sys, json, pickle, functools, warnings; sys.path.insert(0, "scripts"); sys.path.insert(0, "src")
 warnings.filterwarnings("ignore")
 from _paths import WORK, REPORTS
@@ -58,9 +62,12 @@ for name, (path, hpi_shock) in SCEN.items():
         haz_store[(name, model)] = (hs, hl)
         smm = (hs + hl).mean(0)
         surv = np.exp(np.log1p(-(hs + hl)).cumsum(1))
+        s_prev = np.hstack([np.ones((len(last), 1)), surv[:, :-1]])             # in the pool at the start of month k
+        smm_sw = ((hs + hl) * s_prev).sum(0) / s_prev.sum(0)
         for k in range(H):
             out_paths.append({"scenario": name, "model": model, "month": str(p1.MONTHS[months[k]].date())[:7], "pmms": path[k],
                               "smm_count": smm[k], "cpr_count": float(cpr_from_smm(smm[k])),
+                              "cpr_count_survival_weighted": float(cpr_from_smm(smm_sw[k])),
                               "cpr_sale": float(cpr_from_smm(hs[:, k].mean())), "cpr_new_lien": float(cpr_from_smm(hl[:, k].mean()))})
         # illustrative balance runoff
         bal_frac = ((1 + last.note_hat / 1200) ** 360 - (1 + last.note_hat / 1200) ** np.minimum(last.tenure_m, 360)) / ((1 + last.note_hat / 1200) ** 360 - 1)
@@ -74,6 +81,7 @@ for name, (path, hpi_shock) in SCEN.items():
         summ.append({"scenario": name, "model": model, "properties": len(last),
                      "cum_terminations_12m_pct": float((1 - surv[:, 11]).mean() * 100), "cum_terminations_24m_pct": float((1 - surv[:, 23]).mean() * 100),
                      "avg_cpr_count_24m_pct": float(cpr_from_smm(smm).mean() * 100),
+                     "avg_cpr_count_survival_weighted_24m_pct": float(cpr_from_smm(smm_sw).mean() * 100),
                      "avg_cpr_balance_24m_pct": float(proj.cpr.mean() * 100),
                      "prepaid_share_of_start_balance_24m_pct": float(proj.prepaid_principal.sum() / proj.balance.iloc[0] * 100),
                      "wal_years_horizon_truncated": float(proj.wal_remaining.iloc[0])})
@@ -81,6 +89,8 @@ for name, (path, hpi_shock) in SCEN.items():
 S_ = pd.DataFrame(summ)
 base = S_[S_.scenario == "base (flat at 2025-06)"].set_index("model")
 S_["delta_cpr_count_vs_base_pp"] = S_.apply(lambda r: r.avg_cpr_count_24m_pct - base.loc[r.model, "avg_cpr_count_24m_pct"], axis=1)
+S_["delta_cpr_survival_weighted_vs_base_pp"] = S_.apply(lambda r: r.avg_cpr_count_survival_weighted_24m_pct
+                                                         - base.loc[r.model, "avg_cpr_count_survival_weighted_24m_pct"], axis=1)
 S_.to_csv(OUT / "stress_summary.csv", index=False); pd.DataFrame(out_paths).to_csv(OUT / "stress_paths.csv", index=False)
 print(S_.round(3).to_string(index=False))
 rng_tr = (float(P.loc[P.split == "train", "pmms"].min()), float(P.loc[P.split == "train", "pmms"].max()))

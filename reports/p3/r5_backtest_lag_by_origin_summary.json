@@ -1,0 +1,134 @@
+{
+  "pass_rule": "within +/-25% of actual 24-month charge-off dollars (|ratio - 1| <= 0.25) at >= 6 of 8 origins",
+  "lag_choice": "per origin T: lowest event-weighted log loss on T-23..T of the champion fitted to T-24, lags 0/12/24",
+  "chosen_lags": {
+    "2009-12": 24,
+    "2011-12": 12,
+    "2013-12": 12,
+    "2015-12": 0,
+    "2017-12": 12,
+    "2019-12": 12,
+    "2021-12": 24,
+    "2023-12": 12
+  },
+  "M1": {
+    "within_25pct_lag_by_origin": 1,
+    "within_25pct_fixed_lag_12": 2,
+    "mean_abs_log_ratio_lag_by_origin": 0.8696950520782628,
+    "mean_abs_log_ratio_fixed_lag_12": 0.6840291288720146,
+    "per_origin": {
+      "2009-12": {
+        "lag_by_origin": 2.290771871715889,
+        "fixed_lag_12": 0.9571732336703952
+      },
+      "2011-12": {
+        "lag_by_origin": 1.7980153182094385,
+        "fixed_lag_12": 1.7980153182094385
+      },
+      "2013-12": {
+        "lag_by_origin": 0.5603220361063286,
+        "fixed_lag_12": 0.5603220361063286
+      },
+      "2015-12": {
+        "lag_by_origin": 1.2143568986382571,
+        "fixed_lag_12": 1.0962213047301337
+      },
+      "2017-12": {
+        "lag_by_origin": 2.3131154839448445,
+        "fixed_lag_12": 2.3131154839448445
+      },
+      "2019-12": {
+        "lag_by_origin": 7.2150713641149204,
+        "fixed_lag_12": 7.21507136411492
+      },
+      "2021-12": {
+        "lag_by_origin": 3.5652969076695453,
+        "fixed_lag_12": 1.9608605472152472
+      },
+      "2023-12": {
+        "lag_by_origin": 1.9788486372962069,
+        "fixed_lag_12": 1.9788486372962069
+      }
+    }
+  },
+  "M1v": {
+    "within_25pct_lag_by_origin": 3,
+    "within_25pct_fixed_lag_12": 4,
+    "mean_abs_log_ratio_lag_by_origin": 0.43647927564179734,
+    "mean_abs_log_ratio_fixed_lag_12": 0.3971013662586751,
+    "per_origin": {
+      "2009-12": {
+        "lag_by_origin": 1.717395827746624,
+        "fixed_lag_12": 0.9192366456479693
+      },
+      "2011-12": {
+        "lag_by_origin": 1.5416365719475311,
+        "fixed_lag_12": 1.5416365719475311
+      },
+      "2013-12": {
+        "lag_by_origin": 0.3528298714987553,
+        "fixed_lag_12": 0.3528298714987553
+      },
+      "2015-12": {
+        "lag_by_origin": 0.705111941312184,
+        "fixed_lag_12": 0.6466445892853714
+      },
+      "2017-12": {
+        "lag_by_origin": 1.1289182349692828,
+        "fixed_lag_12": 1.1289182349692828
+      },
+      "2019-12": {
+        "lag_by_origin": 2.131164116873307,
+        "fixed_lag_12": 2.131164116873307
+      },
+      "2021-12": {
+        "lag_by_origin": 1.0418500759869633,
+        "fixed_lag_12": 0.9084527232753368
+      },
+      "2023-12": {
+        "lag_by_origin": 0.8121369604870733,
+        "fixed_lag_12": 0.8121369604870733
+      }
+    }
+  },
+  "M1r": {
+    "within_25pct_lag_by_origin": 1,
+    "within_25pct_fixed_lag_12": 3,
+    "mean_abs_log_ratio_lag_by_origin": 0.6478369666048134,
+    "mean_abs_log_ratio_fixed_lag_12": 0.5047075704747638,
+    "per_origin": {
+      "2009-12": {
+        "lag_by_origin": 2.472120258073311,
+        "fixed_lag_12": 1.015737764578166
+      },
+      "2011-12": {
+        "lag_by_origin": 1.8211068126364964,
+        "fixed_lag_12": 1.8211068126364964
+      },
+      "2013-12": {
+        "lag_by_origin": 0.376217380683388,
+        "fixed_lag_12": 0.376217380683388
+      },
+      "2015-12": {
+        "lag_by_origin": 1.1297578013401535,
+        "fixed_lag_12": 1.0844195933820375
+      },
+      "2017-12": {
+        "lag_by_origin": 1.6288043435110022,
+        "fixed_lag_12": 1.6288043435110022
+      },
+      "2019-12": {
+        "lag_by_origin": 3.8295888499515933,
+        "fixed_lag_12": 3.829588849951592
+      },
+      "2021-12": {
+        "lag_by_origin": 1.5309398951826352,
+        "fixed_lag_12": 0.8095586693268135
+      },
+      "2023-12": {
+        "lag_by_origin": 1.3800201977438988,
+        "fixed_lag_12": 1.3800201977438995
+      }
+    }
+  }
+}

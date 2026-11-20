@@ -8,20 +8,21 @@ neighbour-attention network over comparable sales) beat them out of time and out
 **What this is not.** It is not a credit model, and no bank, servicer or credit-bureau data is involved. All outcomes are
 public-record sale prices.
 
-**Where it sits in a loss estimate.** For a collateralised loan, the collateral value sets the loan-to-value ratio and the
-recovery on default, so an error in value passes into loss severity roughly one for one. A median error of 11–16% is
-therefore an error of that order in LTV for the typical loan, and more in the tails.
+**Where it sits in a loss estimate.** For a collateralised loan, the collateral value enters the loan-to-value ratio:
+with the loan amount fixed, a value overstated by a fraction e makes the estimated LTV 1/(1+e) times the true one. How
+that carries into a loss also depends on lien position, costs, the balance at default and the recovery process, none of
+which this study models. A median error of 11–16% is the size of the valuation uncertainty a loss model would inherit.
 
-Every number in this report comes from `scripts/10–15` and `19`, and the CSVs in `reports/p2/`.
+Numbers come from `scripts/10–15`, `19` and `23–29` and the CSVs in `reports/p2/`.
 
 ## 1. Data
 
 | Item | Value |
 |---|---|
-| Ground truth | 2,418,184 arm's-length residential resales (Vendor C 2025 vintage, transaction type 1, deed in {WD, SW, GD, BA, WJ, DD}, $30k–$20M), 2022-05..2025-08, 49 states + DC |
+| Ground truth | 2,418,184 arm's-length residential resales (Vendor C 2025 vintage, transaction type 1, deed in {WD, SW, GD, BA, WJ, DD}, $30k–$20M), 2022-05..2025-08, 49 states + DC. The price-disclosure screen meant to drop states where fewer than 90% of resales carry a price did not bind (§5, V10), so the sample covers every state with recorded prices |
 | Features | Vendor C old vintage (≤ 2022-04): prior arm's-length sale and date, 2021 assessor values, property attributes; tract density / owner share / median age; lat/lon |
-| Comparable-sale pool | 10,335,897 arm's-length sales 2012-01..2022-04, indexed to 2022-04 with the repeat-sales index |
-| Market index | Self-built Bailey–Muth–Nourse repeat-sales index (1,286,709 pairs). The valuation study uses a version estimated **only from pairs whose second sale is ≤ 2024-06, excluding the 9 hold-out states**, frozen after 2024-06 |
+| Comparable-sale pool | 10,335,897 arm's-length sales 2012-01..2022-04, indexed to 2022-04 with the repeat-sales index (`r5_avm_data_counts.csv`) |
+| Market index | Self-built Bailey–Muth–Nourse repeat-sales index. The valuation study uses a version estimated **only from pairs whose second sale is ≤ 2024-06, excluding the 9 hold-out states** (748,303 pairs, against 1,286,709 in the full index), frozen after 2024-06 |
 | Vendor values (the champions) | Vendor A AVM (+ Vendor A's stated AVM error), Vendor B estimated home value, Vendor A market value, Vendor C 2025 assessor value. **Evaluated only, never used as features** |
 | Splits (fixed in advance) | train ≤ 2024-03 (1,243,394); calibration 2024-04..06 (166,722); **OOT test 2024-07..2025-08 (591,687)**; **spatial hold-out** MA, NJ, WI, MN, SC, KY, OK, AZ, WA, all months (416,381) |
 | Excluded from features | race / ethnicity tract shares (used only in the disparity audit); every 2025 household field |
@@ -52,9 +53,11 @@ Out-of-time window, 591,687 sales (`vendor_accuracy_oot.csv`). Metrics:
    power for realised error: Spearman 0.045, AUC 0.498 for |error| > 20%, n = 455,397.
 2. **The Vendor B "estimated home value" is anchored to the recorded sale price, i.e. look-ahead.**
    - 29.5% of OOT sales match within 0.5%.
-   - The median ratio is exactly 1.000 in every quarter through 2024Q3, with median error under 0.3%
-     (`vendor_accuracy_by_quarter.csv`). It drifts away for sales from 2024Q4 onward (median error 6.4%, then 15%
-     in 2025Q1).
+   - The median ratio is exactly 1.000 in every quarter through 2024Q3, with median error under 0.3%; in 2024Q3,
+     52.5% of its values are within 0.5% of the sale price (`vendor_accuracy_by_quarter.csv`). It drifts away for sales
+     from 2024Q4 onward (median error 6.4%, then 15% in 2025Q1).
+   - The snapshot shows the value, not when it was produced or how; "anchored" describes how closely it tracks the
+     recorded price, not a verified vendor method.
    - In the hold-out states its MdAPE is 0.3%.
    - It is therefore **not a valid benchmark**, and any model trained with it on sold homes would leak the
      target.
@@ -69,9 +72,9 @@ Out-of-time window, 591,687 sales (`vendor_accuracy_oot.csv`). Metrics:
 |---|---|
 | B0 index AVM | prior arm's-length sale × repeat-sales index (covers only the 55% of sales with a prior sale) |
 | B0′ comp index | median of the 20 nearest pre-2022 comps × index |
-| B1 hedonic OLS | log price on property, comp, assessor and index features + state FE (train R² 0.725) |
+| B1 hedonic OLS | log price on property, comp, assessor and index features + state FE |
 | C1 LightGBM | 33 features (no race variables), early stopping on the calibration window (837 trees) |
-| C1q | LightGBM 10%/90% quantile models, split-conformal calibration on 2024-04..06 (CQR; q̂ = 0.024) |
+| C1q | LightGBM 10%/90% quantile models, split-conformal calibration on 2024-04..06 (conformalized quantile regression, [Romano, Patterson and Candès 2019](https://arxiv.org/abs/1905.03222)) |
 | C2 neighbour-attention NN | PyTorch on Apple MPS. 32 comp tokens (indexed price, size, age, beds/baths, condo, dx/dy, distance, comp age, size/age gaps) → 2-layer transformer encoder → subject cross-attention → residual over "comp median × index"; Huber loss; 10 epochs; best calibration MdAPE 11.07% (epoch 9) |
 | C3 blend | equal-weight average of C1 and C2 in log price; weights not tuned, blend added after calibration-window (not test) results |
 
@@ -94,6 +97,9 @@ Out-of-time window, 591,687 sales (`vendor_accuracy_oot.csv`). Metrics:
   **−5.4 pp (CI −6.7 to −4.4)**. Against the Vendor A AVM: 34.4% (33.5–35.2%).
 - **Common support** (419,615 rows with all four vendor values): C3 11.1%, Vendor A market value 16.6%, Vendor A AVM 34.3%.
 - **Excluding the 12 non-disclosure states** (464,080 rows): C3 10.8% vs Vendor A market value 16.3%. The result holds.
+  Excluding instead the 12 states that fail the price-disclosure screen as it was meant to be computed (460,745 rows;
+  §5, `r5_accuracy_by_screen_version.csv`): C3 10.7% vs 16.4%. Retrained without them as well (§9), the result is the
+  same.
 - **Segments.** With a prior recorded sale: C3 9.9%. Without one: 14.0%.
 
 **Spatial hold-out (416,381 sales in 9 states the models never saw, index rebuilt without them).**
@@ -106,24 +112,32 @@ Out-of-time window, 591,687 sales (`vendor_accuracy_oot.csv`). Metrics:
 | C2 neighbour-attention NN | 12.9% | 40.9% | 0.991 |
 | C3 blend | 12.2% | 42.3% | 0.959 |
 
-Out of geography, **the challenger does no better than Vendor A market value**: no significant difference, bootstrap
-difference +0.1 pp, CI −2.5 to +1.8. Most hold-out sales fall in 2022–24, when that vendor's ~2022 values were still current, and the
+Out of geography, **the challenger does no better than Vendor A market value**: no measurable difference, bootstrap
+difference +0.1 pp, CI −2.5 to +1.8 (no equivalence test was run, so this is not evidence that the two are equal). Most hold-out sales fall in 2022–24, when that vendor's ~2022 values were still current, and the
 hold-out states get only a division-level index. The attention network transports best of the three challengers
-(median ratio 0.991 vs 0.935 for GBM).
+(median ratio 0.991 vs 0.935 for GBM). Its embedding for an unseen state never receives a training example, so its value
+is set by the initialisation. Re-scoring the trained network with that embedding replaced by zeros, by the mean of the
+trained state embeddings or by three fresh random draws moves the blend's hold-out error from 12.2% to 12.3–12.7% over
+all months, and from 12.8% to 12.9–13.5% in the out-of-time months (`r6_unseen_state_embedding.csv`). The all-month
+comparison with the vendor (12.0%) therefore depends on an untrained parameter.
 
 **Calibrated uncertainty (C1q, 80% nominal).**
 
-| Window | Coverage | Median interval width |
+| Window | Coverage (sale price inside the interval) | Median width, upper ÷ lower − 1 |
 |---|---|---|
-| Calibration | 80.0% | 60% of price |
-| OOT | 77.5% | 62% of price |
-| Spatial | 78.1% | 66% of price |
+| Calibration | 80.0% | 60% |
+| OOT | 77.5% | 62% |
+| Spatial | 78.1% | 66% |
 
-The slight under-coverage reflects drift. Interval width ranks large errors (|error| > 20%) with **AUC 0.77**
-OOT, against **0.498** for Vendor A's stated AVM error.
+The intervals are C1q's, not the blend's. The slight under-coverage is consistent with drift, but drift is not its
+only possible cause: the LightGBM tree count was early-stopped on the same calibration window (§5). Interval width
+ranks large C1 errors (|error| > 20%) with **AUC 0.77** OOT; Vendor A's stated AVM error ranks the AVM's own large errors
+with **0.498**. The two AUCs are on different targets, so they are not a head-to-head comparison. Calibrating with the
+exact split-conformal rank ceil((n + 1) × 0.8) instead of an interpolated quantile changes nothing at this sample size
+(166,722 calibration sales); in the hold-out states out of time, coverage is 76.1% (`r6_conformal_exact_rank.csv`).
 
 **Drift.** With the model and index frozen at 2024-06, C3 monthly MdAPE rises from 10.6% (2024-07) to 12.4%
-(2025-08), about 0.14 pp per month. Vendor A market value goes from 15.5% to 17.4%.
+(2025-08), about 0.14 pp per month between the end points. Vendor A market value goes from 15.5% to 17.4%.
 
 **Price tiers (upmarket).**
 - Top within-state decile MdAPE: C3 16.3%, C2 16.1%, Vendor A market value 18.2%, Vendor A AVM 47.9%.
@@ -143,8 +157,10 @@ regressivity is removed:
 | C2 attention | −3.2 |
 | C3 blend | −2.0 |
 
-The Vendor A AVM gap is the pattern the 2024 interagency AVM quality-control rule and the PAVE task force
-target. These are tract-level ratio comparisons, not a fair-lending test of any lending decision.
+On realised-price tiers the Vendor A AVM gap is the kind of pattern the 2024 interagency AVM quality-control rule and
+the PAVE task force target, but it is not robust to tiers known before the sale (§9, V8). These are tract-level ratio
+comparisons: a tract's minority share is not any borrower's protected status, and a valuation error is not a lending
+decision, so this is not a fair-lending test.
 
 **Explainability.**
 - TreeSHAP share of mean |SHAP| for C1 (20k OOT rows): pre-2022 neighbour comps 39.6%, 2021 assessor values
@@ -158,8 +174,16 @@ target. These are tract-level ratio comparisons, not a fair-lending test of any 
 
 - **Vendor values carry look-ahead** (they are dated after many test sales), so the vendor comparison favours
   the vendors on timing. The challengers win on OOT accuracy anyway; out of geography they do not beat Vendor A market value.
-- **Sale prices in non-disclosure states** may be MLS-sourced. The sensitivity above shows the result does not
-  depend on them.
+- **Sale prices in non-disclosure states** may be MLS-sourced, and the recorded ones may be a selected subsample.
+  The disclosure screen in `scripts/10_p2_sales.py` was meant to drop states where fewer than 90% of resales carry a
+  price, but it computed each share as an average that skips missing prices, so every state passed. Over all resales,
+  12 states fall below 90% (AK, ID, IN, KS, ME, MO, MS, MT, NM, TX, UT, WY; Texas 0.64; `r5_disclosure_denominator_bridge.csv`).
+  These states are therefore in the training and test samples. Scored without them, and with the whole pipeline
+  re-run on the 38 jurisdictions that pass (§9), the results hold, and none of the nine hold-out states is among them
+  (V10).
+- **Unseen-state handling and field dates.** C2's embedding for an unseen state receives no gradient in training, so
+  its value is set by the initialisation, and C3 inherits it; other values move the blend's hold-out error by up to half
+  a point (§4). The snapshot does not show when each fallback property attribute was formed.
 - **The comp pool and assessor features date from 2022-04.** A production AVM would refresh comps monthly; the
   frozen design deliberately understates what a maintained challenger could achieve.
 - **The 50/50 blend weight was fixed a priori.** The blend was added after seeing calibration-window
@@ -231,18 +255,19 @@ evidence, not as an adoption decision.
 | V1 | High | Open | Vendor A AVM sits 32% below sale prices (median ratio 0.684, median error 34.4%); its stated error has no ranking power (AUC 0.498) | Not usable as a collateral value without recalibration; do not use the stated error |
 | V2 | High | Open | Vendor B estimated value is anchored to the recorded sale price (29.5% within 0.5%) | Not a benchmark and never a model feature (target leakage) |
 | V3 | Medium | Open | Vendor A market value and the 2025 assessor value behave like 2022 values and are regressive (PRD > 1.03) | Re-index before use; monitor staleness quarterly |
-| V4 | Medium | Open | The challenger beats the best usable vendor out of time (11.4% against 16.3%). In nine unseen states it ties over all months (12.2% against 12.0%), a tie that splits by period: the vendor is better in 2022-05..2024-06, when its ~2022 values were current (9.3% against 11.9%), and the challenger out of time (12.8% against 18.5%) | Judge out-of-footprint use against a vendor value of the same vintage; do not read the tie as transferability |
-| V5 | Medium | Open | Error rose from 11.1% to 12.9% over 14 months while input and prediction PSI stayed at or below 0.012 | Outcome trigger: median error 1.5 points above the calibration window (would have fired in 2025-05) |
+| V4 | Medium | Open | The challenger beats the best usable vendor out of time (11.4% against 16.3%). In nine unseen states there is no measurable difference over all months (12.2% against 12.0%; 12.3–12.7% for the blend with other values of its untrained unseen-state embedding), and that comparison splits by period: the vendor is better in 2022-05..2024-06, when its ~2022 values were current (9.3% against 11.9%), and the challenger out of time (12.8% against 18.5%) | Judge out-of-footprint use against a vendor value of the same vintage; do not read the all-month result as transferability |
+| V5 | Medium | Open | Error rose from 11.1% to 12.9% over 14 months while prediction PSI and the PSI of the stable inputs stayed at or below 0.012 | Outcome trigger: median error 1.5 points above the calibration window for two consecutive months (first crossed in 2025-05, fires in 2025-06) |
 | V6 | Medium | Open | 80% conformal intervals cover 77.5% out of time; tree count early-stopped on the calibration window | Recalibrate the conformal quantile when coverage falls below 75% |
 | V7 | Low | Open | Bottom-tier accuracy depends on how tiers are built: on realised-price deciles the blend values the lowest decile at 1.41 times price (error 41.3%); on deciles of the indexed prior sale its error there is 16.6% (§9) | Monitor the tails on tiers known before the sale; no low-value collateral use without that check |
 | V8 | Low | Open | The Vendor A AVM's within-tier minority gap (−9.1 log points on realised-price tiers) shrinks to −1.0 to −2.4 and is not significant on tiers known before the sale; the blend's gap changes sign, from −2.0 to +2.6 or +3.0 (§9) | No fairness conclusion from either tiering alone; report both |
 | V9 | Info | Info | Vendor "interest rate" is the PMMS rate of the lien month (prepayment study, F8) | Not a recorded loan rate |
+| V10 | Medium | Closed | The price-disclosure screen did not bind: missing prices dropped out of each state's share, so every state passed; over all resales 12 states fall below 90% (Texas 0.64; §5) | Re-run on the 38 jurisdictions that pass (§9): 10.7% against 16.4% out of time, 11.9% against 12.0% in unseen states; the published tables keep all states |
 
 **Disposition.** Research and benchmark use. The challenger is a monitoring benchmark for vendor values in the states
 it was trained on; it is not approved as a production collateral value, and neither is any vendor field without the
 remediation above.
 
-## 9. Robustness checks added at review (2026-11-18)
+## 9. Robustness checks
 
 **More bootstrap draws.** With 1,000 county-cluster draws (`scripts/26_p2_robustness.py`, `r4_bootstrap_b1000.json`)
 the blend's out-of-time advantage over Vendor A market value is −5.5 points (95% CI −6.6 to −4.3), with every draw
@@ -251,7 +276,7 @@ below zero; the first 200 draws reproduce the published interval.
 **Unseen states by period.** The all-month tie in the nine hold-out states (12.2% against 12.0%) hides two periods
 (`r4_accuracy_spatial_oot.csv`). In 2022-05..2024-06, when the vendor's ~2022 values were current, Vendor A market value
 is more accurate (9.3% against 11.9%). In the out-of-time months the blend is (12.8% against 18.5%; on rows with both
-vendor fields, −6.2 points, 95% CI −7.8 to −4.2). Transfer to new geography is therefore not shown to fail; the
+vendor fields, −6.1 points, 95% CI −7.8 to −4.2). Transfer to new geography is therefore not shown to fail; the
 comparison is confounded with the vendor's value date.
 
 **Price tiers known before the sale.** The tier tables above sort on the realised price. Rebuilt on within-state
@@ -265,21 +290,48 @@ deciles of two values known before the sale, the prior sale indexed to 2024-06 (
 | Indexed prior sale | −1.0 (−4.0 to +2.6) | +2.6 (+1.5 to +3.5) |
 | 2021 assessor value | −2.4 (−5.3 to +0.9) | +3.0 (+1.8 to +4.0) |
 
-The blend's error in the lowest decile is 16.6% on prior-sale tiers against 41.3% on realised-price tiers, and its
-median ratio there is 0.97 rather than 1.41. Ex-ante tiers carry the opposite artefact (the ex-ante value ÷ price ratio
-rises across deciles), and both ex-ante values are challenger inputs, so the two tierings bound the result rather than
-measure it. The Vendor A AVM's minority-share gap and the extreme bottom-decile error are not robust findings (V7, V8).
+On the same homes, the sales with a recorded prior sale, the blend's median error in the bottom tier is 26.2% (median
+ratio 1.23) when the realised sale price defines the tiers and 16.6% (0.97) when the indexed prior sale does
+(`r4_accuracy_by_exante_tier.csv`); the 41.3% above is on all sales, so it mixes the tier definition with a different
+sample. The same homes enter both tests, though different homes fall in the bottom tier. The blend uses the prior sale
+as an input, and ex-ante tiers carry the opposite artefact (the ex-ante value ÷ price ratio rises across deciles), so
+these are sensitivity checks with no mathematical bound between them. The Vendor A AVM's minority-share gap and the
+extreme bottom-decile error are not robust findings (V7, V8).
+
+**The pipeline re-run on the states that pass the price-disclosure screen** (`scripts/29_p2_screened_rerun.sh`,
+`r6_screened_*`). With each state's share of priced resales computed over all resales (§5), 12 states fail and the
+sample falls to 1,971,173 sales in 38 jurisdictions; every step from the sample to the bootstrap and the monitoring
+back-test was re-run without them.
+
+| Result | Published (all states) | Re-run (states that pass) |
+|---|---|---|
+| Out of time: blend vs Vendor A market value, median error | 11.4% vs 16.3% | 10.7% vs 16.4% |
+| Out of time, paired, 1,000 county-cluster draws: difference (95% CI) | −5.5 (−6.6 to −4.3) | −6.5 (−7.9 to −5.0) |
+| Unseen states, all months | 12.2% vs 12.0% | 11.9% vs 12.0% |
+| Unseen states, out-of-time months | 12.8% vs 18.5% | 12.3% vs 18.5% |
+| Monitoring back-test: LightGBM error, first to last month | 11.1% to 12.9% | 10.2% to 12.2% |
+| Trigger: first month over 1.5 points; two-month rule | 2025-05; 2025-06 | 2025-04; 2025-05 |
+| Largest PSI of predictions and stable inputs | 0.012 | 0.013 |
+
+The conclusions do not depend on the non-disclosure states: the blend's advantage out of time is a point larger
+without them, unseen states still show no measurable difference, and error still rises while PSI stays flat.
 
 ## 10. Related literature
 
 Full citations are in `docs/references.md`.
 
-- **Disparity measurement.** Avenancio-León and Howard (2022) document racial gaps in property assessments relative to
+- **Disparity measurement.** [Avenancio-León and Howard (2022)](https://doi.org/10.1093/qje/qjac009) document racial gaps in property assessments relative to
   market values. The vendor-AVM gap measured here is sensitive to how price tiers are built: −0.091 log points on tiers
-  of the realised sale price, −0.010 to −0.024 and not significant on tiers of a value known before the sale (§9).
+  of the realised sale price over all sales; on the same sales, −0.061 and −0.079 on realised-price tiers against −0.010
+  and −0.024, not significant, on tiers of a value known before the sale (§9).
   That sensitivity is this study's result, not a claim about the cited paper.
-- **Machine learning in credit.** Fuster, Goldsmith-Pinkham, Ramadorai and Walther (2022) study how more flexible
+- **Machine learning in credit.** [Fuster, Goldsmith-Pinkham, Ramadorai and Walther (2022)](https://doi.org/10.1111/jofi.13090) study how more flexible
   models change who gains from better prediction in mortgage lending; the fairness checks in §4 and §9 are a much
-  narrower measurement exercise on valuation errors.
+  narrower measurement exercise on valuation errors, by tract, not by borrower.
+- **Methods.** The market index is a repeat-sales index ([Bailey, Muth and Nourse 1963](https://doi.org/10.1080/01621459.1963.10480679)); the intervals are conformalized
+  quantile regression ([Romano, Patterson and Candès 2019](https://arxiv.org/abs/1905.03222)), whose coverage guarantee assumes exchangeable calibration and
+  test data, so out of time and out of state only the measured coverage counts; COD and PRD follow the IAAO Standard on
+  Ratio Studies, whose thresholds are for property tax assessment, not bank AVM approval.
 - **Model risk.** The structure of this report (vendor due diligence, challengers, outcomes analysis, monitoring and use
-  limits) follows the supervisory guidance on model risk management (SR 11-7 / OCC 2011-12).
+  limits) follows the 2011 supervisory guidance on model risk management (SR 11-7 / OCC 2011-12), since replaced by
+  revised guidance (SR 26-2 / OCC Bulletin 2026-13, April 2026).

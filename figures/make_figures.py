@@ -1,6 +1,6 @@
 """Figures 1 to 9 of the README, drawn from the tables in reports/ with the helpers in figures/figstyle.py.
 
-Usage: python figures/make_figures.py   (writes figures/figure1.png to figure9.png)
+Usage: python figures/make_figures.py   (writes figures/figure0 to figure9 as .png and .svg, and *-dark.svg for dark mode)
 """
 import math
 import re
@@ -46,8 +46,8 @@ def legend(ax, items, **kw):
         elif kind in ("line", "dash"):
             h.append(Line2D([], [], color=c, lw=2, ls="-" if kind == "line" else (0, (4, 3)), label=lab))
         else:
-            h.append(Line2D([], [], ls="", marker="o" if kind == "dot" else "D", ms=6, mfc=c if kind != "open" else "white",
-                            mec=c if kind == "open" else "white", mew=1.5 if kind == "open" else 1, label=lab))
+            h.append(Line2D([], [], ls="", marker="o" if kind == "dot" else "D", ms=6, mfc=c if kind != "open" else BG,
+                            mec=c if kind == "open" else BG, mew=1.5 if kind == "open" else 1, label=lab))
     kw.setdefault("handlelength", 1.4); kw.setdefault("borderaxespad", 0.2)
     leg = ax.legend(handles=h, **kw)
     for t in leg.get_texts():
@@ -89,7 +89,7 @@ def p_cpr(ax, letter, title):
     mae_rec = b[("hazard: logit + rolling 3-month recalibration", "rolling 1-month-ahead")]
     ax.plot(m.month, m.cpr_total_m1 * 100, color=GREY, lw=1.8, ls=(0, (4, 3)), zorder=3)
     ax.plot(t.month, rec, color=BLUE, lw=2.0, zorder=3)
-    ax.plot(m.month, m.cpr_total_y * 100, color=INK, lw=2.2, marker="o", ms=4, mec="white", mew=1, zorder=4)
+    ax.plot(m.month, m.cpr_total_y * 100, color=INK, lw=2.2, marker="o", ms=4, mec=BG, mew=1, zorder=4)
     ax.axvline(DIP, color=ORANGE, lw=1, ls=(0, (2, 2)))
     ax.text(DIP + pd.Timedelta(days=6), 2.3, "rate dip", color=ORANGE, fontsize=7.5, fontweight="bold")
     legend(ax, [("Actual", INK, "line"), (f"Logit, recalibrated (error {mae_rec:.2f})", BLUE, "line"),
@@ -100,29 +100,48 @@ def p_cpr(ax, letter, title):
 
 
 def p_avm(ax, letter, title):
-    a = csv(P2 + "accuracy_oot_own_coverage.csv").set_index("estimator").MdAPE * 100
+    a = csv(P2 + "accuracy_oot_common.csv").set_index("estimator")
+    n = int(a.loc["C3 blend (C1+C2)", "n"]); a = a.MdAPE * 100
     items = [("Vendor A AVM", "Vendor A AVM (champion)", GREY), ("Vendor A market value", "Vendor A market value", GREY),
              ("Hedonic OLS", "B1 hedonic OLS", LIGHT), ("LightGBM", "C1 LightGBM", BLUE),
              ("Attention network", "C2 neighbour-attention NN", BLUE), ("Blend", "C3 blend (C1+C2)", NAVY)]
     hbars(ax, [i[0] for i in items], [a[i[1]] for i in items], [i[2] for i in items], lambda v: f"{v:.1f}%", vmax=40)
-    ax.set_xlabel("Median absolute error, 592K out-of-time sales", color=MUTED)
+    ax.set_xlabel(f"Median abs. % error, the same {n:,} later sales", color=MUTED)
     panel(ax, letter, title)
 
 
+def block_ci(d, pred, act, block=3, B=2000, seed=0):
+    """95% moving-block bootstrap interval (blocks of months) for sum(pred) / sum(act)."""
+    rng = np.random.default_rng(seed); pv, av = d[pred].to_numpy(), d[act].to_numpy(); n = len(pv)
+    starts = np.arange(n - block + 1); k = int(np.ceil(n / block)); out = np.empty(B)
+    for b in range(B):
+        idx = (rng.choice(starts, k)[:, None] + np.arange(block)).ravel()[:n]
+        out[b] = pv[idx].sum() / av[idx].sum()
+    return np.percentile(out, [2.5, 97.5])
+
+
 def p_ratio(ax, letter, title):
-    """Predicted / actual hazard of the logit, by split and cause."""
+    """Predicted / actual hazard of the logit, by split and cause, with month-block bootstrap intervals."""
     e = csv(P1 + "eval_monthly_hazard_final.csv").set_index(["cause", "split", "model"]).pred_over_actual
-    splits = [("In sample", "train"), ("Out of time", "oot"), ("Hold-out states", "spatial"), ("Hold-out, out of time", "spatial_oot")]
+    mo = csv(P1 + "r4_f2_by_month.csv")
+    for c in ("sale", "new_lien"):
+        mo[f"pred_{c}"] = mo[f"pred_hazard_{c}_published"] * mo.property_months
+    splits = [("In sample", "train", "train_states", "training months"), ("Out of time", "oot", "train_states", "out of time"),
+              ("Hold-out states", "spatial", "holdout_states", "training months"),
+              ("Hold-out, out of time", "spatial_oot", "holdout_states", "out of time")]
     ax.axvline(1, color=MUTED, lw=0.9, zorder=1)
-    for i, (_, sp) in enumerate(splits):
-        y = len(splits) - 1 - i
-        s, n = e[("sale", sp, "m1")], e[("new_lien", sp, "m1")]
-        pill(ax, min(s, n), max(s, n), y, OSOFT if s - n > 0.1 else PALE, lw=5, z=1)
-        dot(ax, s, y, NAVY, s=95, z=4); dot(ax, n, y, ORANGE, s=44, z=5)
-        ax.text(min(s, n) - 0.03, y, f"{n:.2f}", ha="right", va="center", fontsize=8, color=INK, fontweight="bold")
-    ax.set_xlim(0.5, 1.12); ax.set_ylim(-0.6, 4.2)
-    row_axis(ax, [s[0] for s in splits], "Predicted ÷ actual hazard (logit)")
-    legend(ax, [("Sale", NAVY, "dot"), ("Refinance / new lien", ORANGE, "dot")], loc="upper left", ncol=2, columnspacing=1.0,
+    for i, (_, sp, geo, win) in enumerate(splits):
+        y = len(splits) - 1 - i; d = mo[(mo.geo == geo) & (mo.window_published == win)]
+        for c, col, dy, sz in (("sale", NAVY, 0.13, 70), ("new_lien", ORANGE, -0.13, 52)):
+            v = e[(c, sp, "m1")]; lo, hi = block_ci(d, f"pred_{c}", f"actual_{c}")
+            assert abs(d[f"pred_{c}"].sum() / d[f"actual_{c}"].sum() - v) < 0.002
+            ax.plot([lo, hi], [y + dy, y + dy], color=col, lw=2.2, solid_capstyle="round", zorder=3, alpha=0.85)
+            dot(ax, v, y + dy, col, s=sz, z=5)
+            if c == "new_lien":
+                ax.text(lo - 0.015, y + dy, f"{v:.2f}", ha="right", va="center", fontsize=8, color=INK, fontweight="bold")
+    ax.set_xlim(0.45, 1.12); ax.set_ylim(-0.6, 4.2)
+    row_axis(ax, [s[0] for s in splits], "Predicted ÷ actual hazard (logit), 95% month-block interval")
+    legend(ax, [("Sale", NAVY, "dot"), ("New first lien", ORANGE, "dot")], loc="upper left", ncol=2, columnspacing=1.0,
            bbox_to_anchor=(0.0, 1.02))
     panel(ax, letter, title)
 
@@ -146,7 +165,7 @@ def p_or(ax, letter, title):
              "case-control seed 1": "Another sampling seed",
              "note rate = cohort median recorded rate (regression calibration)": "Cohort rate proxy"}
     rows_ = []
-    for cause, color, tag in [("new_lien", NAVY, "Refinance: "), ("sale", GREY, "Sale: ")]:
+    for cause, color, tag in [("new_lien", NAVY, "New lien: "), ("sale", GREY, "Sale: ")]:
         for spec, nm in names.items():
             r = s[(s.cause == cause) & (s.spec == spec)]
             if r.empty or (cause == "sale" and nm not in ("Baseline", "Other tenure knots")):
@@ -226,13 +245,13 @@ def p_nl_month(ax, letter, title):
     w = w[(w.spec == "S1") & (w.split == "oot") & (w.cause == "new_lien")].copy(); w["month"] = pd.to_datetime(w.month)
     ax.axhspan(0.9, 1.1, color=PALE, alpha=0.7, lw=0, zorder=0); ax.axhline(1, color=MUTED, lw=0.8)
     ax.text(w.month.iloc[-1], 1.05, "closure band 0.90–1.10", color=MUTED, fontsize=7.2, ha="right", va="center")
-    ax.plot(w.month, w.fixed_origin / w.actual_hazard, color=GREY, lw=1.8, ls=(0, (4, 3)), marker="o", ms=3.5, mec="white", zorder=3)
-    ax.plot(w.month, w.walk_forward / w.actual_hazard, color=BLUE, lw=2.2, marker="o", ms=4.5, mec="white", mew=1, zorder=4)
+    ax.plot(w.month, w.fixed_origin / w.actual_hazard, color=GREY, lw=1.8, ls=(0, (4, 3)), marker="o", ms=3.5, mec=BG, zorder=3)
+    ax.plot(w.month, w.walk_forward / w.actual_hazard, color=BLUE, lw=2.2, marker="o", ms=4.5, mec=BG, mew=1, zorder=4)
     ax.axvline(DIP, color=ORANGE, lw=1, ls=(0, (2, 2)))
     ax.text(DIP + pd.Timedelta(days=6), 0.52, "rate dip", color=ORANGE, fontsize=7.5, fontweight="bold")
     legend(ax, [("Re-estimated each month", BLUE, "line"), ("Fixed at 2024-06", GREY, "dash")], loc="lower right")
     ax.set_ylim(0.5, 1.15); month_axis(ax)
-    ax.set_ylabel("Predicted ÷ actual\nrefinance / new-lien hazard"); clean(ax)
+    ax.set_ylabel("Predicted ÷ actual\nnew-lien hazard"); clean(ax)
     panel(ax, letter, title)
 
 
@@ -258,10 +277,10 @@ def p_vendor_q(ax, letter, title):
             ("Assessor value (Vendor C 2025)", GREY, "Assessor value", -0.012), ("Vendor A AVM", NAVY, "Vendor A AVM", 0.0)]
     for est, c, lab, dy in spec:
         r = q[q.estimator == est].set_index("group").reindex(order).median_ratio
-        ax.plot(x, r, color=c, lw=2.0, marker="o", ms=3.5, mec="white", zorder=3)
+        ax.plot(x, r, color=c, lw=2.0, marker="o", ms=3.5, mec=BG, zorder=3)
         if est.startswith("Vendor B"):
             k = order.index("2024Q3")
-            ax.text(k / 2, 1.025, "Vendor B equals the sale price through 2024Q3", color=ORANGE, fontsize=7.2, fontweight="bold",
+            ax.text(k / 2, 1.025, "Vendor B median value ÷ price = 1.00 through 2024Q3", color=ORANGE, fontsize=7.2, fontweight="bold",
                     ha="center")
             continue
         ax.text(x[-1] + 0.4, r.iloc[-1] + dy, lab, color=c, fontsize=7.2, fontweight="bold", va="center")
@@ -273,37 +292,44 @@ def p_vendor_q(ax, letter, title):
 
 
 def p_geo(ax, letter, title):
-    o = csv(P2 + "accuracy_oot_own_coverage.csv").set_index("estimator").MdAPE * 100
-    s = csv(P2 + "accuracy_spatial_own_coverage.csv").set_index("estimator").MdAPE * 100
-    rows_ = [("Out of time,\n592K sales", o), ("Nine unseen\nstates", s)]
-    for i, (_, t) in enumerate(rows_):
-        y = len(rows_) - 1 - i
-        b, v = t["C3 blend (C1+C2)"], t["Vendor A market value"]
-        pill(ax, 9, 18, y, PALE, lw=7, z=1, alpha=0.7)
-        pill(ax, min(b, v), max(b, v), y, ORANGE if v - b > 1 else GREY, lw=7, z=2, alpha=0.8)
-        dot(ax, b, y, NAVY, s=60, z=5); dot(ax, v, y, GREY, s=60, marker="D")
-        for val, col in [(b, NAVY), (v, MUTED)]:
-            left = val == min(b, v)
-            ax.text(val + (-0.35 if left else 0.35), y, f"{val:.1f}%", ha="right" if left else "left", va="center", fontsize=8,
-                    color=col, fontweight="bold")
-    ax.set_xlim(9, 18); ax.set_ylim(-0.6, 2.0)
-    row_axis(ax, [r[0] for r in rows_], "Median absolute error (%)")
-    legend(ax, [("Challenger blend", NAVY, "dot"), ("Best usable vendor", GREY, "diamond")], loc="upper left", ncol=2,
-           columnspacing=1.0, bbox_to_anchor=(0.0, 1.02))
+    """Blend minus the best usable vendor value on the same sales, with county-cluster bootstrap intervals."""
+    b = load(P2 + "r4_bootstrap_b1000.json")
+    est0 = b["point_estimate_full_sample"]["delta_MdAPE_challenger_minus_mktval"]; lo0, _, hi0 = b["bootstrap_B1000"]["delta_MdAPE_challenger_minus_mktval"]
+    sp = csv(P2 + "r4_accuracy_spatial_oot.csv").drop_duplicates("window").set_index("window")
+    w = {k: sp.loc[[i for i in sp.index if i.startswith(k)][0]] for k in ("all months", "2022-05", "2024-07")}
+    rows_ = [(f"Out of time,\n{b['n'] / 1000:.0f}K sales", est0, lo0, hi0)] + [
+        (lab, w[k].c3_minus_mktval_MdAPE_common, w[k].c3_minus_mktval_boot_ci95_lo, w[k].c3_minus_mktval_boot_ci95_hi)
+        for lab, k in (("Unseen states,\nall months", "all months"), ("Unseen states,\nbefore Jul 2024", "2022-05"),
+                       ("Unseen states,\nout of time", "2024-07"))]
+    est = [100 * r[1] for r in rows_]; lo = [100 * r[2] for r in rows_]; hi = [100 * r[3] for r in rows_]
+    cols = [NAVY if h < 0 else (ORANGE if l > 0 else GREY) for l, h in zip(lo, hi)]
+    dotrows(ax, [r[0] for r in rows_], est, lo, hi, cols, lambda v: f"{v:+.1f}".replace("-", "−"), (-9.5, 6.5), ref=0,
+            ref_label="no difference", pad=0.025)
+    ax.text(-9.3, -0.55, "← blend better", fontsize=7, color=MUTED, va="center"); ax.text(6.3, -0.55, "vendor better →", fontsize=7, color=MUTED, va="center", ha="right")
+    ax.set_xlabel("Blend minus vendor, median abs. error (pp), same sales; 95% CI")
     panel(ax, letter, title)
 
 
 def p_drift(ax, letter, title):
-    m = csv(P2 + "oot_monthly_MdAPE.csv").rename(columns={"Unnamed: 0": "month"}); m["month"] = pd.to_datetime(m.month)
+    m = csv(P2 + "r4_monitoring_backtest.csv"); cal = m[m.window.str.startswith("calibration")].iloc[0]
+    o = m[m.window == "out of time"].copy(); o["month"] = pd.to_datetime(o.month)
     ps = csv(P2 + "psi_backfill_summary.csv"); ps = ps[ps.split == "oot"]
     psi_max = math.ceil(max(ps.prediction_psi.max(), ps.max_unexpected_psi.max()) * 1000) / 1000
-    y = m["C1 LightGBM"] * 100
-    ax.plot(m.month, y, color=NAVY, lw=2.2, marker="o", ms=4, mec="white", mew=1, zorder=3)
-    ax.text(m.month.iloc[0] + pd.Timedelta(days=12), y.iloc[0] - 0.2, f"{y.iloc[0]:.1f}%", fontsize=8, color=INK, fontweight="bold", va="top")
-    ax.text(m.month.iloc[-1], y.iloc[-1] + 0.25, f"{y.iloc[-1]:.1f}%", fontsize=8, color=INK, fontweight="bold", ha="center")
-    ax.text(m.month.iloc[-1], 10.35, f"Prediction and stable-input PSI\n≤ {psi_max:.3f} in all {len(ps)} months", fontsize=7.3, color=INK2,
+    thr = 100 * cal.MdAPE_C1_LightGBM + o.trigger_threshold_pp.iloc[0]
+    y = o.MdAPE_C1_LightGBM * 100
+    ax.axhline(thr, color=ORANGE, lw=1.1, ls=(0, (4, 3)), zorder=1)
+    ax.text(o.month.iloc[0], thr + 0.06, f"trigger: calibration error + {o.trigger_threshold_pp.iloc[0]:.1f} pt", fontsize=7, color=ORANGE,
+            fontweight="bold", va="bottom")
+    ax.plot(o.month, y, color=NAVY, lw=2.2, marker="o", ms=4, mec=BG, mew=1, zorder=3)
+    first = o[o.C1_trigger_single_month].month.iloc[0]; fire = o[o.C1_trigger_two_consecutive].month.iloc[0]
+    dot(ax, fire, y[o.month == fire].iloc[0], ORANGE, s=70, z=5)
+    ax.annotate(f"crosses {first:%b}, fires {fire:%b %Y}", (fire, y[o.month == fire].iloc[0]), xytext=(-8, 22), textcoords="offset points",
+                ha="right", fontsize=7.2, color=ORANGE, fontweight="bold", arrowprops=dict(arrowstyle="-", color=ORANGE, lw=0.8))
+    ax.text(o.month.iloc[0] + pd.Timedelta(days=12), y.iloc[0] - 0.2, f"{y.iloc[0]:.1f}%", fontsize=8, color=INK, fontweight="bold", va="top")
+    ax.text(o.month.iloc[-1], y.iloc[-1] + 0.25, f"{y.iloc[-1]:.1f}%", fontsize=8, color=INK, fontweight="bold", ha="center")
+    ax.text(o.month.iloc[-1], 10.35, f"Prediction and stable-input PSI\n≤ {psi_max:.3f} in all {len(ps)} months", fontsize=7.3, color=INK2,
             ha="right", va="center", bbox=dict(boxstyle="round,pad=0.45", fc=PALE, ec="none"))
-    ax.set_ylim(10, 13.6); month_axis(ax); ax.set_ylabel("Median error, LightGBM (%)"); clean(ax)
+    ax.set_ylim(10, 13.6); month_axis(ax); ax.set_ylabel("Median absolute % error, LightGBM"); clean(ax)
     panel(ax, letter, title)
 
 
@@ -323,15 +349,16 @@ def p_bt_overview(ax, letter, title):
     org = b.origin.drop_duplicates().tolist(); x = np.arange(len(org))
     for key, lab, c in [("M1", "Logit (champion)", NAVY), ("M1v", "Logit + approval eras", BLUE)]:
         r = b[b.model == key].set_index("origin").reindex(org).dollar_ratio
-        ax.plot(x, r, color=c, lw=2.0 if key == "M1" else 1.8, marker="o", ms=5, mec="white", mew=1, zorder=3, label=lab,
-                ls="-" if key == "M1" else (0, (4, 2)))
+        ax.plot(x, r, color=c, lw=0.9, alpha=0.4, zorder=2, ls="-" if key == "M1" else (0, (4, 2)))   # guide only: origins overlap
+        ax.scatter(x, r, s=44 if key == "M1" else 36, color=c, edgecolor=BG, linewidth=1, zorder=3, label=lab)
     log_ratio_axis(ax)
     k = org.index("2019-12"); v = b[(b.model == "M1") & (b.origin == "2019-12")].dollar_ratio.iloc[0]
-    ax.annotate(f"{v:.1f}× (payment relief)", (k, v), xytext=(8, -2), textcoords="offset points", ha="left", va="center", fontsize=7.3, color=ORANGE, fontweight="bold")
+    ax.annotate(f"{v:.1f}× from Dec 2019 (payment relief)", (k, v), xytext=(8, -2), textcoords="offset points", ha="left", va="center", fontsize=7.3, color=ORANGE, fontweight="bold")
     ax.text(len(org) - 0.35, 1.27, "±25%", fontsize=7, color=MUTED, va="bottom", ha="right")
     ax.set_xticks(x, [o[:4] for o in org]); ax.set_xlim(-0.4, len(org) - 0.3)
     ax.set_xlabel("Forecast origin (December)"); ax.set_ylabel("24-month charge-off $: predicted ÷ actual"); clean(ax)
-    legend(ax, [("Logit (champion)", NAVY, "line"), ("Logit + approval eras", BLUE, "dash")], loc="lower right")
+    legend(ax, [("Logit (champion), first backtest", NAVY, "dot"), ("Logit + approval eras, no overlay", BLUE, "dot")],
+           loc="upper left", fontsize=7)
     panel(ax, letter, title)
 
 
@@ -388,7 +415,7 @@ def p_backtest(ax, letter, title):
     offs = dict(zip([m[0] for m in LOSS_MODELS], (-0.21, -0.07, 0.07, 0.21)))
     for key, lab, c in LOSS_MODELS:
         r = b[b.model == key].set_index("origin").reindex(org).dollar_ratio
-        ax.scatter(x + offs[key], r, s=34 if key != "M1" else 44, color=c, edgecolor="white", linewidth=0.8, zorder=4, label=lab)
+        ax.scatter(x + offs[key], r, s=34 if key != "M1" else 44, color=c, edgecolor=BG, linewidth=0.8, zorder=4, label=lab)
     log_ratio_axis(ax)
     ax.set_xticks(x, [o[:4] for o in org]); ax.set_xlim(-0.5, len(org) - 0.5)
     ax.set_xlabel("Forecast origin (December)"); ax.set_ylabel("24-month charge-off $: predicted ÷ actual"); clean(ax)
@@ -470,7 +497,7 @@ def p_ur(ax, letter, title):
 
 def p_severity_year(ax, letter, title):
     y = csv(P3 + "annual_chargeoffs.csv"); y = y[y.year <= 2025]
-    ax.plot(y.year, 100 * y.dollar_severity, color=NAVY, lw=2.0, marker="o", ms=4, mec="white", zorder=3)
+    ax.plot(y.year, 100 * y.dollar_severity, color=NAVY, lw=2.0, marker="o", ms=4, mec=BG, zorder=3)
     for yr in (2010, 2019):
         v = 100 * y.set_index("year").dollar_severity[yr]
         ax.text(yr, v + 1.2, f"{v:.0f}%", ha="center", fontsize=7.8, fontweight="bold", color=INK)
@@ -488,7 +515,7 @@ def p_backtest2(ax, letter, title):
               ("Eras + relief overlay", b2[b2.model == "M1v"].set_index("origin").dollar_ratio, BLUE, s["M1v +O1"]["within_25pct"]),
               ("… + recalibration", b2[b2.model == "R2a"].set_index("origin").dollar_ratio, LIGHT, s["R2a +O1"]["within_25pct"])]
     for i, (lab, r, c, k) in enumerate(series):
-        ax.scatter(x + (i - 1) * 0.17, r.reindex(org), s=40, color=c, edgecolor="white", linewidth=0.8, zorder=4)
+        ax.scatter(x + (i - 1) * 0.17, r.reindex(org), s=40, color=c, edgecolor=BG, linewidth=0.8, zorder=4)
     log_ratio_axis(ax)
     ax.set_xticks(x, [o[:4] for o in org]); ax.set_xlim(-0.5, len(org) - 0.5)
     ax.set_xlabel("Forecast origin (December)"); ax.set_ylabel("24-month charge-off $: predicted ÷ actual"); clean(ax)
@@ -506,7 +533,7 @@ def p_pandemic2(ax, letter, title):
     ax.plot(act.month, act.actual_dollars / 1e6, color=INK, lw=2.2, zorder=4)
     ax.plot(act.month, act.pred_dollars / 1e6, color=NAVY, lw=1.8, zorder=3)
     ax.plot(r2.month, r2.pred_dollars / 1e6, color=BLUE, lw=2.0, ls=(0, (4, 2)), zorder=3)
-    legend(ax, [("Actual", INK, "line"), ("Champion, realised macro", NAVY, "line"), ("Eras + relief overlay", BLUE, "dash")],
+    legend(ax, [("Actual", INK, "line"), ("Champion, realised macro", NAVY, "line"), ("Eras + relief overlay (hindsight)", BLUE, "dash")],
            loc="upper left", bbox_to_anchor=(0.0, 0.9), fontsize=7)
     ax.xaxis.set_major_locator(mdates.MonthLocator(bymonth=[1, 7])); ax.xaxis.set_major_formatter(mdates.DateFormatter("%b\n%Y"))
     ax.set_ylabel("Charge-offs per month ($ million)"); clean(ax)
@@ -520,7 +547,7 @@ def p_lifetime(ax, letter, title):
               ("R2a", "+ recalibration", LIGHT, "o"), ("R2b", "+ downturn exp.", BLUE, "D")]
     for i, (k, lab, c, mk) in enumerate(series):
         r = lt[lt.model == k].set_index("origin").reindex(org).dollar_ratio
-        ax.scatter(x + (i - 2) * 0.13, r, s=34 if mk == "D" else 40, marker=mk, color=c, edgecolor="white", linewidth=0.8, zorder=4)
+        ax.scatter(x + (i - 2) * 0.13, r, s=34 if mk == "D" else 40, marker=mk, color=c, edgecolor=BG, linewidth=0.8, zorder=4)
     log_ratio_axis(ax, 0.25, 4)
     ax.set_xticks(x, [o[:4] for o in org]); ax.set_xlim(-0.5, len(org) - 0.5)
     ax.set_xlabel("Origin (December); outcomes to 2026-09"); ax.set_ylabel("Lifetime-to-date charge-off $: pred. ÷ actual"); clean(ax)
@@ -533,16 +560,25 @@ def p_lifetime(ax, letter, title):
 def p_allowance2(ax, letter, title):
     c2 = csv(P3 + "r2_cecl_allowance.csv").set_index(["scenario", "model"]).loss_over_balance
     c0 = csv(P3 + "cecl_allowance.csv"); c0 = c0[c0.horizon == "recorded term"].set_index(["scenario", "model"]).loss_over_balance
+    sens = csv(P3 + "r4_allowance_sensitivities.csv"); sens = sens[sens.scenario == "baseline"].set_index(["variant", "model"]).loss_over_balance
+    ALT = {("M1v", "Eras + relief overlay"): (100 * sens[("v", "M1v")], "FY2020+ loans keep the FY2014–19 effect"),
+           ("R2a", "Eras + overlay, recalibrated"): (100 * sens[("iv", "R2a")], "factor phased out after 2029Q1")}
     order = [("M1v", "Eras + relief overlay", c2), ("R2b", "… + downturn exposure", c2), ("R2a", "Eras + overlay, recalibrated", c2),
-             ("M1", "Champion (with overlay)", c2), ("M2", "LightGBM (before)", c0), ("M0", "Lookup, no macro", c0)]
+             ("M1", "Champion, no overlay", c0), ("M1", "Champion, with overlay", c2), ("M2", "LightGBM (challenger)", c0),
+             ("M0", "Lookup, no macro", c0)]
     for i, (k, lab, src) in enumerate(order):
         y = len(order) - 1 - i
         bse, sev = 100 * src[("baseline", k)], 100 * src[("severe", k)]
         pill(ax, 0, 11, y, PALE, lw=7, z=1, alpha=0.6); pill(ax, bse, sev, y, OSOFT, lw=7, z=2)
         dot(ax, bse, y, NAVY, s=58, z=5); dot(ax, sev, y, ORANGE, s=58, z=4)
-        ax.text(bse - 0.25, y, f"{bse:.1f}%", ha="right", va="center", fontsize=7.6, fontweight="bold", color=INK)
-        if sev - bse > 0.05:
-            ax.text(sev + 0.25, y, f"{sev:.1f}%", ha="left", va="center", fontsize=7.6, fontweight="bold", color=ORANGE)
+        ax.text(min(bse, sev) - 0.25, y, f"{bse:.1f}%", ha="right", va="center", fontsize=7.6, fontweight="bold", color=INK)
+        if round(sev, 1) != round(bse, 1):          # severe can sit below baseline under the reversion of §9 (R2b)
+            ax.text(max(bse, sev) + 0.25, y, f"{sev:.1f}%", ha="left", va="center", fontsize=7.6, fontweight="bold", color=ORANGE)
+        if (k, lab) in ALT:                          # one assumption about recent cohorts, baseline (report §9 sensitivities)
+            alt, note = ALT[(k, lab)]
+            ax.plot([bse, alt], [y - 0.36, y - 0.36], color=MUTED, lw=0.8, zorder=2)
+            ax.scatter([alt], [y - 0.36], s=26, marker="D", facecolor=BG, edgecolor=INK2, linewidth=1, zorder=4)
+            ax.text(max(bse, alt) + 0.2, y - 0.36, f"{alt:.1f}%: {note}", va="center", fontsize=6.6, color=INK2)
     ax.set_xlim(0, 11.5); ax.set_ylim(-0.6, len(order) + 0.2)
     row_axis(ax, [o[1] for o in order], "Lifetime loss, % of estimated balance (active book, 2026-09)")
     legend(ax, [("Fed baseline", NAVY, "dot"), ("Fed severely adverse", ORANGE, "dot")], loc="upper right", ncol=2, columnspacing=0.8,
@@ -552,7 +588,7 @@ def p_allowance2(ax, letter, title):
 
 # ------------------------------------------------------------------ findings logs (read from the two reports)
 SHORT_P = {"F1": "Loan at risk unobserved: property-level prepayment proxy",
-           "F2": "Refinance hazard under-predicted out of time by 26–30%",
+           "F2": "New-lien hazard under-predicted out of time by 26–30%",
            "F3": "Sale lock-in coefficient not identified",
            "F4": "Rate proxy attenuated for owners who refinanced before 2022",
            "F5": "Monotone constraint imposes a sale lock-in sign the data do not support",
@@ -564,7 +600,7 @@ SHORT_P = {"F1": "Loan at risk unobserved: property-level prepayment proxy",
 SHORT_L = {"L1": "Loan term revised after default: a leak, removed",
            "L2": "Cohort quality confounded with macro sensitivity",
            "L3": "Payment relief broke the unemployment link (7.7× over-prediction)",
-           "L4": "Macro path changes 24-month forecasts by <3% at 6 of 8 origins",
+           "L4": "Macro path changes 24-month forecasts by <3% (6 of 8 origins; 5 after the lag fix)",
            "L5": "Model choice moves the allowance more than the scenario",
            "L6": "PSI flat while the forecast was 2.3× actual",
            "L7": "Charge-off timing is administrative (write-off batches)",
@@ -574,16 +610,86 @@ SHORT_L = {"L1": "Loan term revised after default: a leak, removed",
            "L11": "Business-age coding changes across approval eras",
            "L12": "2026Q1–Q3 macro inputs are scenario values, not published data",
            "L13": "Recording lag: September 2026 payoffs not yet in the data",
-           "L14": "Era model under-predicts recent cohorts out of time"}
+           "L14": "Era model under-predicts recent cohorts out of time",
+           "L15": "Undated charge-offs and date errors: 25 loans, dropped in code",
+           "L16": "Scenario changes reverted apart from levels: fixed and re-run"}
 SHORT_V = {"V1": "Vendor A AVM 32% below sale prices; stated error uninformative",
            "V2": "Vendor B value anchored to the sale price (leakage)",
            "V3": "Vendor A market value and assessor value are stale, regressive",
-           "V4": "Unseen-state tie splits by period; challenger wins out of time",
+           "V4": "No measurable difference in unseen states; splits by period",
            "V5": "Error rose 11.1% to 12.9% while PSI stayed flat",
            "V6": "Conformal intervals under-cover out of time (77.5%)",
            "V7": "Bottom-decile error depends on how tiers are built",
            "V8": "Minority-share gap not robust to tier definition",
-           "V9": "Vendor 'interest rate' is a market-rate lookup"}
+           "V9": "Vendor 'interest rate' is a market-rate lookup",
+           "V10": "Price-disclosure screen did not bind; result holds without the 12 states"}
+
+
+FINDING_LOGS = [("credit_loss_cecl_validation.md", "## 12. Findings log", "## 13.", "Credit-loss model"),
+                ("prepayment_model_development_and_validation.md", "## 7. Findings log", "## 8.", "Prepayment model"),
+                ("avm_champion_challenger_validation.md", "## 8. Findings log", "**Disposition.**", "Home-valuation models")]
+
+
+def read_findings(doc_name, start, end):
+    doc = (ROOT / "docs" / doc_name).read_text()
+    log = doc[doc.index(start):doc.index(end)]
+    return [(f, sev.strip(), re.sub(r"\*|\(.*?\)", "", st).strip()) for f, sev, st in re.findall(r"^\| ([FLV]\d+) \| ([^|]+) \| ([^|]+) \|", log, flags=re.M)]
+
+
+def p_matrix(ax):
+    """All findings by severity and status."""
+    recs = [r for d, s, e, _ in FINDING_LOGS for r in read_findings(d, s, e)]
+    sevs, sts = ["High", "Medium", "Low", "Info"], ["Open", "Closed", "Info"]
+    cnt = {(a, b): sum(1 for _, s, t in recs if s == a and t == b) for a in sevs for b in sts}
+    top = max(cnt.values())
+    for j, st in enumerate(sts):
+        y = len(sts) - 1 - j
+        ax.text(-0.15, y, st, ha="right", va="center", fontsize=8, fontweight="bold", color=INK)
+        for i, sv in enumerate(sevs):
+            v = cnt[(sv, st)]; base = ORANGE if st == "Open" else (BLUE if st == "Closed" else GREY)
+            rbox(ax, i + 0.06, y - 0.4, 0.88, 0.8, mix(PALE, base, 0.15 + 0.85 * v / top) if v else PALE, r=0.1, alpha=1 if v else 0.5)
+            ax.text(i + 0.5, y, str(v) if v else "–", ha="center", va="center", fontsize=9, fontweight="bold",
+                    color=(ONPILL if v / top > 0.45 else INK) if v else MUTED)
+    for i, sv in enumerate(sevs):
+        ax.text(i + 0.5, len(sts) - 0.35, sv, ha="center", va="bottom", fontsize=7.5, color=MUTED, fontweight="bold")
+    n_open = sum(cnt[(s, "Open")] for s in sevs)
+    ax.text(4.35, 1.0, f"{len(recs)} findings\n{n_open} open", ha="left", va="center", fontsize=11, fontweight="bold", color=INK, linespacing=1.3)
+    ax.set_xlim(-1.4, 9.4); ax.set_ylim(-0.6, len(sts) + 0.1); ax.axis("off")
+    ax.set_title("All findings by severity and status", loc="left", fontweight="bold", color=INK, pad=6)
+
+
+def figure0():
+    """Overview: what each model got right, what it missed, and where they meet."""
+    e3 = csv(P3 + "eval_hazard.csv").query("cause == 'co'").set_index(["split", "model"])
+    auc, lvl = e3.loc[("out of time 2020-26", "M1 logit"), "auc"], e3.loc[("out of time 2020-26", "M1 logit"), "pred_over_actual"]
+    e1 = csv(P1 + "eval_monthly_hazard_final.csv").set_index(["cause", "split", "model"]).pred_over_actual
+    a2 = csv(P2 + "accuracy_oot_own_coverage.csv").set_index("estimator")
+    cards = [("Write-offs and loss", "SBA 7(a) small-business loans", f"Ranking: AUC {auc:.2f}", f"Write-offs {lvl:.1f}× actual"),
+             ("How long loans stay", "Home sales and new mortgages", f"Sales {e1[('sale', 'oot', 'm1')]:.2f}× actual",
+              f"New liens {e1[('new_lien', 'oot', 'm1')]:.2f}× actual"),
+             ("What collateral is worth", "Vendor and model home values", f"Blend error {100 * a2.loc['C3 blend (C1+C2)', 'MdAPE']:.1f}%",
+              "Error rose; PSI quiet")]
+    fig = plt.figure(figsize=(7.6, 2.55), dpi=300); ax = fig.add_axes([0.005, 0.005, 0.99, 0.99])
+    ax.set_xlim(0, 30); ax.set_ylim(0, 10); ax.axis("off")
+    card, edge = mix(BG, PALE, 0.85), mix(PALE, GREY, 0.35)
+    for i, (t, sub, held, missed) in enumerate(cards):
+        x0 = 0.3 + i * 9.9
+        rbox(ax, x0, 3.55, 9.3, 6.3, card, r=0.3, ec=edge, lw=0.6)
+        ax.text(x0 + 0.55, 9.0, t, fontsize=9, fontweight="bold", color=INK, va="center")
+        ax.text(x0 + 0.55, 8.05, sub, fontsize=7.2, color=MUTED, va="center")
+        for k, (lab, txt, col) in enumerate((("Held up", held, BLUE), ("Missed", missed, ORANGE))):
+            yy = 6.55 - k * 1.85
+            rbox(ax, x0 + 0.45, yy - 0.75, 8.4, 1.5, BG, r=0.25, ec=edge, lw=0.6)
+            rbox(ax, x0 + 0.75, yy - 0.45, 2.05, 0.9, col, r=0.22)
+            ax.text(x0 + 1.775, yy, lab, fontsize=6.6, color=ONPILL, va="center", ha="center", fontweight="bold")
+            ax.text(x0 + 3.15, yy, txt, fontsize=7.8, color=INK, va="center", fontweight="bold")
+        ax.annotate("", (x0 + 4.65, 2.3), (x0 + 4.65, 3.45), arrowprops=dict(arrowstyle="-|>", color=MUTED, lw=0.9, mutation_scale=9,
+                    shrinkA=0, shrinkB=0))   # each input feeds the estimate: one straight arrow per card
+    rbox(ax, 0.3, 0.2, 29.1, 2.0, NAVY, r=0.3)
+    ax.text(15, 1.58, "Lifetime loss estimate", ha="center", va="center", fontsize=9, fontweight="bold", color=ONPILL)
+    ax.text(15, 0.78, "Each input held up on one check and missed on another; only checks against outcomes caught the misses.",
+            ha="center", va="center", fontsize=7.3, color=ONPILL)
+    save(fig, "figures/figure0.png")
 
 
 def p_findings(ax, doc_name, start, end, short, title):
@@ -598,8 +704,8 @@ def p_findings(ax, doc_name, start, end, short, title):
         rbox(ax, 0.0, y - 0.36, 0.55, 0.72, PALE, r=0.12)
         ax.text(0.275, y, fid, ha="center", va="center", fontsize=8, fontweight="bold", color=INK)
         rbox(ax, 0.7, y - 0.34, 1.05, 0.68, sev_c[sev], r=0.12, alpha=0.9)
-        ax.text(1.225, y, sev, ha="center", va="center", fontsize=7.5, fontweight="bold", color="white" if sev != "Info" else INK)
-        rbox(ax, 1.9, y - 0.34, 1.05, 0.68, {"Open": OSOFT, "Closed": "#d9eadf", "Info": PALE}[st], r=0.12)
+        ax.text(1.225, y, sev, ha="center", va="center", fontsize=7.5, fontweight="bold", color=ONPILL if sev != "Info" else INK)
+        rbox(ax, 1.9, y - 0.34, 1.05, 0.68, {"Open": OSOFT, "Closed": GOOD, "Info": PALE}[st], r=0.12)
         ax.text(2.425, y, st, ha="center", va="center", fontsize=7.5, fontweight="bold", color=INK)
         ax.text(3.15, y, short[fid], va="center", fontsize=8, color=INK)
     for xx, lab in [(0.275, "ID"), (1.225, "Severity"), (2.425, "Status"), (3.15, "Finding")]:
@@ -611,39 +717,39 @@ def p_findings(ax, doc_name, start, end, short, title):
 # ------------------------------------------------------------------ figures, in README order
 def figure1():
     fig, ax = plt.subplots(1, 3, figsize=(10.4, 3.4), dpi=300, layout="constrained", gridspec_kw=dict(width_ratios=[1.05, 1.0, 0.85]))
-    p_bt_overview(ax[0], "A", "When will loans charge off? 24-month forecasts")
-    p_auc(ax[1], "B", "How long do loans live? Prepayment AUC")
-    p_avm(ax[2], "C", "What is the collateral worth? Median error")
+    p_bt_overview(ax[0], "A", "Write-offs: 24-month $ forecast ÷ actual")
+    p_auc(ax[1], "B", "Loan life: ranking of next-month sales")
+    p_avm(ax[2], "C", "Collateral: median valuation error")
     save(fig, "figures/figure1.png")
 
 
 def figure2():
     fig, ax = plt.subplots(1, 3, figsize=(10.6, 3.4), dpi=300, layout="constrained", gridspec_kw=dict(width_ratios=[0.95, 1.05, 1.0]))
-    p_term_field(ax[0], "A", "The term field is revised after default")
+    p_term_field(ax[0], "A", "The term field is revised after default  ·  L1")
     p_leak_auc(ax[1], "B", "What the leak did to the challenger")
-    p_vintage(ax[2], "C", "Champion's error by approval year")
+    p_vintage(ax[2], "C", "Champion's error by approval year  ·  L2")
     save(fig, "figures/figure2.png")
 
 
 def figure3():
     fig, ax = plt.subplots(1, 3, figsize=(10.6, 3.5), dpi=300, layout="constrained", gridspec_kw=dict(width_ratios=[1.1, 1.05, 0.9]))
-    p_backtest2(ax[0], "A", "24-month backtest, before and after")
-    p_pandemic2(ax[1], "B", "Payment relief, 2020–21")
+    p_backtest2(ax[0], "A", "24-month backtest, before and after fixes")
+    p_pandemic2(ax[1], "B", "Payment relief, 2020–21  ·  L3")
     p_lifetime(ax[2], "C", "Lifetime-to-date backtest")
     save(fig, "figures/figure3.png")
 
 
 def figure4():
     fig, ax = plt.subplots(1, 3, figsize=(10.8, 3.5), dpi=300, layout="constrained", gridspec_kw=dict(width_ratios=[1.35, 0.9, 0.85]))
-    p_allowance2(ax[0], "A", "Lifetime loss by model and scenario")
+    p_allowance2(ax[0], "A", "Lifetime loss by model and scenario  ·  L5")
     p_ur(ax[1], "B", "Fed 2026 unemployment paths")
-    p_severity_year(ax[2], "C", "Severity barely moves with the cycle")
+    p_severity_year(ax[2], "C", "Write-off ÷ original amount, by year")
     save(fig, "figures/figure4.png")
 
 
 def figure5():
     fig, ax = plt.subplots(1, 3, figsize=(10.4, 3.4), dpi=300, layout="constrained", gridspec_kw=dict(width_ratios=[1.0, 0.95, 1.0]))
-    p_ratio(ax[0], "A", "Calibration by split")
+    p_ratio(ax[0], "A", "Calibration by split  ·  F2")
     p_calib(ax[1], "B", "12-month forecast by risk decile")
     p_or(ax[2], "C", "Rate sensitivity across specifications")
     save(fig, "figures/figure5.png")
@@ -651,30 +757,31 @@ def figure5():
 
 def figure6():
     fig, ax = plt.subplots(1, 3, figsize=(10.4, 3.4), dpi=300, layout="constrained", gridspec_kw=dict(width_ratios=[1.15, 1.0, 0.85]))
-    p_stress(ax[0], "A", "Rate shocks, 24-month runoff")
-    p_hpi(ax[1], "B", "House-price shocks")
+    p_stress(ax[0], "A", "Rate shocks, 24-month runoff  ·  F10")
+    p_hpi(ax[1], "B", "House-price shocks  ·  F9")
     p_ltv(ax[2], "C", "Training data by LTV")
     save(fig, "figures/figure6.png")
 
 
 def figure7():
     fig, ax = plt.subplots(1, 2, figsize=(8.6, 3.2), dpi=300, layout="constrained", gridspec_kw=dict(width_ratios=[1.2, 1.0]))
-    p_nl_month(ax[0], "A", "Refinance shortfall, month by month")
+    p_nl_month(ax[0], "A", "New-lien shortfall, month by month  ·  F2")
     p_mae(ax[1], "B", "What reduced the error")
     save(fig, "figures/figure7.png")
 
 
 def figure8():
     fig, ax = plt.subplots(1, 3, figsize=(10.4, 3.4), dpi=300, layout="constrained", gridspec_kw=dict(width_ratios=[1.25, 0.95, 0.95]))
-    p_vendor_q(ax[0], "A", "Vendor values by sale quarter")
-    p_geo(ax[1], "B", "Out of time vs. unseen states")
-    p_drift(ax[2], "C", "Monitoring back-test")
+    p_vendor_q(ax[0], "A", "Vendor values by sale quarter  ·  V1, V2")
+    p_geo(ax[1], "B", "Blend vs. vendor, same sales  ·  V4")
+    p_drift(ax[2], "C", "Monitoring back-test  ·  V5")
     save(fig, "figures/figure8.png")
 
 
 def figure9():
-    fig, ax = plt.subplots(3, 1, figsize=(7.6, 11.6), dpi=300, layout="constrained",
-                           gridspec_kw=dict(height_ratios=[len(SHORT_L) + 0.7, len(SHORT_P) + 0.7, len(SHORT_V) + 0.7]))
+    fig, ax = plt.subplots(4, 1, figsize=(7.6, 13.4), dpi=300, layout="constrained",
+                           gridspec_kw=dict(height_ratios=[3.6, len(SHORT_L) + 0.7, len(SHORT_P) + 0.7, len(SHORT_V) + 0.7]))
+    p_matrix(ax[0]); ax = ax[1:]
     p_findings(ax[0], "credit_loss_cecl_validation.md", "## 12. Findings log", "## 13.", SHORT_L, "Credit-loss model")
     p_findings(ax[1], "prepayment_model_development_and_validation.md", "## 7. Findings log", "## 8.", SHORT_P, "Prepayment model")
     p_findings(ax[2], "avm_champion_challenger_validation.md", "## 8. Findings log", "**Disposition.**", SHORT_V, "Home-valuation models")
@@ -683,5 +790,8 @@ def figure9():
 
 if __name__ == "__main__":
     style()
-    for f in (figure1, figure2, figure3, figure4, figure5, figure6, figure7, figure8, figure9):
+    for f in (figure0, figure1, figure2, figure3, figure4, figure5, figure6, figure7, figure8, figure9):
         f()
+    if THEME == "light":                          # then the GitHub dark-mode variants
+        import os, subprocess
+        subprocess.run([sys.executable, __file__], env=dict(os.environ, FIG_THEME="dark"), check=True)

@@ -2,6 +2,10 @@
 
 Disclosure screen: a state is kept when >= 90% of its window resales carry a sale amount (non-disclosure
 states such as TX/UT/KS/MO record few prices and the ones recorded are a selected subsample).
+Note (finding V10, 2026-11-19): AVG((sa1 >= 30000)::int) below skips resales whose sa1 is NULL, so the
+share is computed over priced resales only, every state passes and the screen does not bind; the published sample
+therefore covers all 50 states with recorded prices. 27_p2_disclosure_screen_check.py recomputes the share over all
+resales (12 states fail) and scores the existing predictions without them. The code below is left as it ran.
 Every feature is dated at or before 2022-04 (old Vendor C vintage) except the market index, which is the
 train-only repeat-sales HPI (frozen after 2024-06). Vendor values are as of 2025 and are evaluated, never used as features.
 """

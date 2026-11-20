@@ -37,6 +37,19 @@ def test_categorical_reference_puts_new_categories_in_other_bin():
     assert shares.tolist() == [0.25, 0.25, 0.5]
 
 
+def test_categorical_psi_of_a_distribution_with_missing_values_against_itself_is_zero():
+    x = pd.Series([1, 1, 2, 2, 3, None, None, 1], dtype="Int64")
+    ref = monitoring.categorical_reference(x)
+    assert sum(ref["shares"]) == pytest.approx(1.0)
+    assert monitoring.psi(ref["shares"], monitoring.current_shares(x, ref)) == pytest.approx(0.0)
+
+
+def test_numeric_psi_of_a_distribution_with_missing_values_against_itself_is_zero():
+    x = pd.Series([1.0, 2.0, np.nan, 4.0, 5.0, 6.0, np.nan, 8.0])
+    ref = monitoring.numeric_reference(x, n_bins=4)
+    assert monitoring.psi(ref["shares"], monitoring.current_shares(x, ref)) == pytest.approx(0.0)
+
+
 def test_status_thresholds():
     assert [monitoring.status(v) for v in (0.05, 0.10, 0.30)] == ["stable", "watch", "investigate"]
 

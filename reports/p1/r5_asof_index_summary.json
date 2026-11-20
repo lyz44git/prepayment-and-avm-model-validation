@@ -1,0 +1,169 @@
+{
+  "index": "train_xh: repeat-sales pairs with second sale <= 2024-06, hold-out states excluded (division index), frozen after 2024-06",
+  "lgb_trees": {
+    "sale": 131,
+    "new_lien": 68
+  },
+  "gap_pos_odds_ratio": {
+    "sale": {
+      "as_of": 1.01678696667818,
+      "published": 1.0198100264857635
+    },
+    "new_lien": {
+      "as_of": 0.8918197384850891,
+      "published": 0.8924612880314815
+    }
+  },
+  "m1_key_coefficients": [
+    {
+      "cause": "sale",
+      "term": "gap_pos",
+      "coef": 0.01664762283119608,
+      "se_cluster": 0.014554962208953888,
+      "coef_published": 0.0196163614063968,
+      "se_published": 0.0145616203007028
+    },
+    {
+      "cause": "sale",
+      "term": "gap_neg",
+      "coef": 0.049976462422091424,
+      "se_cluster": 0.02203717224073413,
+      "coef_published": 0.0479498908640931,
+      "se_published": 0.0220659142348463
+    },
+    {
+      "cause": "sale",
+      "term": "pmms",
+      "coef": -0.14699882984792204,
+      "se_cluster": 0.02083513195651621,
+      "coef_published": -0.1493613703360229,
+      "se_published": 0.0206480375788269
+    },
+    {
+      "cause": "sale",
+      "term": "pmms_chg3",
+      "coef": 0.05320711444398016,
+      "se_cluster": 0.018445403375909684,
+      "coef_published": 0.0538117300246841,
+      "se_published": 0.018332631497679
+    },
+    {
+      "cause": "sale",
+      "term": "log_appr",
+      "coef": -0.21316393587387747,
+      "se_cluster": 0.1429775980276804,
+      "coef_published": -0.2104431498082047,
+      "se_published": 0.1475610831483022
+    },
+    {
+      "cause": "sale",
+      "term": "est_ltv",
+      "coef": -0.16757422186780435,
+      "se_cluster": 0.45009202309809876,
+      "coef_published": -0.1537639004040895,
+      "se_published": 0.4739866014546697
+    },
+    {
+      "cause": "sale",
+      "term": "log_value",
+      "coef": 0.05920615962073011,
+      "se_cluster": 0.0184422380088309,
+      "coef_published": 0.0652618224898838,
+      "se_published": 0.018512279482315
+    },
+    {
+      "cause": "new_lien",
+      "term": "gap_pos",
+      "coef": -0.11449125372456098,
+      "se_cluster": 0.01976875690350501,
+      "coef_published": -0.1137721410236974,
+      "se_published": 0.0197721186765462
+    },
+    {
+      "cause": "new_lien",
+      "term": "gap_neg",
+      "coef": -0.005994881286563458,
+      "se_cluster": 0.02438934653391731,
+      "coef_published": -0.0102189218016378,
+      "se_published": 0.0244050916167142
+    },
+    {
+      "cause": "new_lien",
+      "term": "pmms",
+      "coef": -0.22774746426038897,
+      "se_cluster": 0.02673255206419643,
+      "coef_published": -0.2245198526328053,
+      "se_published": 0.0265492301969176
+    },
+    {
+      "cause": "new_lien",
+      "term": "pmms_chg3",
+      "coef": 0.17657407675568648,
+      "se_cluster": 0.022983174246979113,
+      "coef_published": 0.1793190545717209,
+      "se_published": 0.0232738545266418
+    },
+    {
+      "cause": "new_lien",
+      "term": "log_appr",
+      "coef": -0.5033831230598576,
+      "se_cluster": 0.14478057031193034,
+      "coef_published": -0.4893513147946757,
+      "se_published": 0.1453122567398464
+    },
+    {
+      "cause": "new_lien",
+      "term": "est_ltv",
+      "coef": -2.9614978940474783,
+      "se_cluster": 0.4864908207223359,
+      "coef_published": -2.985158287744232,
+      "se_published": 0.4881691409793012
+    },
+    {
+      "cause": "new_lien",
+      "term": "log_value",
+      "coef": -0.21591826569380662,
+      "se_cluster": 0.022011242258856454,
+      "coef_published": -0.2103830607681832,
+      "se_published": 0.0221507115817437
+    }
+  ],
+  "pool_cpr_backtest": {
+    "as_of": {
+      "oot | m1": {
+        "MAE_monthly_cpr_pp": 0.4289849452021423,
+        "corr": 0.9026921810552117
+      },
+      "oot | m2": {
+        "MAE_monthly_cpr_pp": 0.47697186209695874,
+        "corr": 0.770847712476222
+      },
+      "spatial_oot | m1": {
+        "MAE_monthly_cpr_pp": 0.6038875809794768,
+        "corr": 0.902464692049577
+      },
+      "spatial_oot | m2": {
+        "MAE_monthly_cpr_pp": 0.538484183800364,
+        "corr": 0.7281504410970797
+      }
+    },
+    "published": {
+      "oot | m1": {
+        "MAE_monthly_cpr_pp": 0.4272786167549882,
+        "corr": 0.9003208596309573
+      },
+      "oot | m2": {
+        "MAE_monthly_cpr_pp": 0.4821776864776593,
+        "corr": 0.7940934201171727
+      },
+      "spatial_oot | m1": {
+        "MAE_monthly_cpr_pp": 0.6029920101906939,
+        "corr": 0.8981717903218029
+      },
+      "spatial_oot | m2": {
+        "MAE_monthly_cpr_pp": 0.6974118746407982,
+        "corr": 0.7818381606360305
+      }
+    }
+  }
+}

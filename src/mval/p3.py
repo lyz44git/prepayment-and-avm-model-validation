@@ -58,10 +58,17 @@ def macro_quarterly(fed_dir: Path, scenario: str = "baseline", relief_overlay: b
     q["dprime4"] = q.prime - q.prime.shift(4)
     return q
 
-def macro_monthly(q: pd.DataFrame, last_month: int, revert_quarters: int = 4) -> pd.DataFrame:
+CHANGES = {"dur4": "ur", "dprime4": "prime"}   # 4-quarter change -> its level
+
+
+def macro_monthly(q: pd.DataFrame, last_month: int, revert_quarters: int = 4,
+                  changes_from_levels: bool = True) -> pd.DataFrame:
     """Monthly table indexed by month index (from 1999-01), quarterly values applied to each month of the quarter.
-    After the last scenario quarter, inputs revert in a straight line over `revert_quarters` quarters to their
-    2006-2025 average and stay there."""
+    After the last scenario quarter, the levels (unemployment, BBB spread, prime) revert in a straight line over
+    `revert_quarters` quarters to their 2006-2025 average and stay there; the 4-quarter changes are then the 12-month
+    differences of the reverted levels, so levels and changes describe the same path (since
+    2026-11-19). changes_from_levels=False reproduces the first published runs, which reverted each change
+    to its own average independently of its level (reports/p3/before_2026-11-19/)."""
     rows = []
     for _, r in q.iterrows():
         for k in range(3):
@@ -78,8 +85,24 @@ def macro_monthly(q: pd.DataFrame, last_month: int, revert_quarters: int = 4) ->
             w = min((t - end) / (3 * revert_quarters), 1.0)
             ext.append(pd.Series(last * (1 - w) + lr * w, name=t))
         m = pd.concat([m, pd.DataFrame(ext)])
+        if changes_from_levels:
+            for chg, lev in CHANGES.items():
+                m.loc[m.index > end, chg] = (m[lev] - m[lev].shift(12))[m.index > end]
     m.attrs["long_run"] = lr.to_dict()
     return m
+
+
+def start_survival(idx: np.ndarray, hco: np.ndarray, hpf: np.ndarray):
+    """Probability that a loan is still open at the start of each projected month: S_0 = 1, S_t = S_{t-1}(1 - c_t - p_t).
+    Rows are grouped by loan (idx) and ordered by month within each loan. Returns (S_{t-1}, rows where c_t + p_t > 1,
+    the largest c_t + p_t). Replaces cumprod(q) / q, which returned 0 instead of S_{t-1} whenever q_t = 0."""
+    tot = hco + hpf
+    q = np.clip(1 - tot, 0, 1)
+    first = np.r_[True, idx[1:] != idx[:-1]]
+    qs = np.r_[1.0, q[:-1]]
+    qs[first] = 1.0
+    s_prev = pd.Series(qs).groupby(idx).cumprod().to_numpy()
+    return s_prev, int((tot > 1).sum()), float(tot.max()) if len(tot) else 0.0
 
 def downturn_exposure(dur4_by_month: pd.Series, t: np.ndarray, disb_m: np.ndarray, lag: int = 12, window: int = 36,
                       frozen_at: int | None = None) -> np.ndarray:

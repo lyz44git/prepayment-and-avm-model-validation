@@ -15,7 +15,7 @@ import statsmodels.api as sm
 import lightgbm as lgb
 from _paths import WORK, REPORTS
 from mval.p3 import (W1, LOG_RATE, SAMPLE_RATE, HOLDOUT_STATES, CreditDesign, lgb_frame, macro_quarterly, macro_monthly,
-                     plan_sha, ns_basis, AGE_KNOTS, SECTORS, balance_share, month_label)
+                     plan_sha, ns_basis, AGE_KNOTS, SECTORS, balance_share, month_label, start_survival)
 
 ROOT = Path(".").resolve(); R = REPORTS / "p3"; OUT = WORK / "p3"
 assert plan_sha(ROOT) == json.loads((R / "plan_hash.json").read_text())["sha256"]
@@ -114,6 +114,7 @@ def hazards(p, cause, model):
     X.insert(0, "const", 1.0)
     return 1 / (1 + np.exp(-(X.to_numpy(np.float64) @ m["beta"].reindex(X.columns).to_numpy())))
 
+MASS = []
 def run(scen, model, extra=0, chunk=25_000):
     mm = macro_monthly(macro_quarterly(fed, scen), W1 + 480)
     tot = np.zeros(len(book)); paths = np.zeros(480)
@@ -132,8 +133,8 @@ def run(scen, model, extra=0, chunk=25_000):
         else:
             sv = np.clip(sev.predict(sev_X(p)), 0, 1)
         # survival within loan: rows are ordered by step within each loan
-        df = pd.DataFrame({"i": idx, "q": np.clip(1 - hco - hpf, 0, 1)})
-        surv_prev = df.groupby("i").q.cumprod().to_numpy() / np.where(df.q.to_numpy() > 0, df.q.to_numpy(), 1)
+        surv_prev, n_over, mx = start_survival(idx, hco, hpf)
+        MASS.append({"scenario": scen, "model": model, "extra": extra, "rows": len(idx), "rows_sum_above_1": n_over, "max_sum": mx})
         el = surv_prev * hco * sv * p.gross_approval.to_numpy()
         tot[s:s + len(b)] = np.bincount(idx, weights=el, minlength=len(b))
         paths += np.bincount(np.minimum(step, 479), weights=el, minlength=480)
@@ -166,6 +167,8 @@ for scen in ("baseline", "severe"):
 pd.DataFrame(rows).assign(recal_factor=models["factor"]).to_csv(R / "cecl_allowance.csv", index=False)
 pd.DataFrame(seg_rows).to_csv(R / "cecl_by_segment.csv", index=False)
 pd.DataFrame(path_rows).to_csv(R / "cecl_paths.csv", index=False)
+pd.DataFrame(MASS).groupby(["scenario", "model", "extra"], as_index=False).agg(rows=("rows", "sum"), rows_sum_above_1=("rows_sum_above_1", "sum"),
+    max_sum=("max_sum", "max")).to_csv(R / "cecl_hazard_mass_checks.csv", index=False)
 mmb, mms = macro_monthly(macro_quarterly(fed, "baseline"), W1 + 60), macro_monthly(macro_quarterly(fed, "severe"), W1 + 60)
 pd.DataFrame({"month": [month_label(m) for m in range(W1 - 24, W1 + 61)],
               "ur_baseline": mmb.ur.reindex(range(W1 - 24, W1 + 61)).to_numpy(), "ur_severe": mms.ur.reindex(range(W1 - 24, W1 + 61)).to_numpy(),

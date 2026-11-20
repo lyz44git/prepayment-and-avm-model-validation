@@ -190,7 +190,7 @@ def test_valuation_bottom_decile_and_findings_log():
     assert b.loc[mv, "MdAPE"] == pytest.approx(0.306, abs=5e-4)
     doc = (R.parent / "docs" / "avm_champion_challenger_validation.md").read_text()
     log = doc[doc.index("## 8. Findings log"):]
-    assert [f"V{i}" for i in range(1, 10)] == __import__("re").findall(r"^\| (V\d+) \|", log, flags=__import__("re").M)
+    assert [f"V{i}" for i in range(1, 11)] == __import__("re").findall(r"^\| (V\d+) \|", log, flags=__import__("re").M)
 
 
 def test_review_checks_prepayment():
@@ -250,7 +250,8 @@ def test_review_checks_valuation():
 
 CITED = [("Shumway", 2001), ("Campbell", 2008), ("Das", 2007), ("Duffie", 2009), ("Demyanyk", 2011), ("Rajan", 2015),
          ("Fuster", 2022), ("Schwartz", 1989), ("Stanton", 1995), ("Deng", 2000), ("Andersen", 2020), ("Berger", 2021),
-         ("Avenancio-León", 2022), ("Lucas", 1976), ("Harvey", 2017)]
+         ("Avenancio-León", 2022), ("Lucas", 1976), ("Harvey", 2017), ("King", 2001), ("Fonseca", 2024), ("Bailey", 1963),
+         ("Romano", 2019), ("Cameron", 2011), ("MacKinnon", 2025)]
 
 
 def test_every_cited_work_is_in_the_reference_list():
@@ -262,7 +263,8 @@ def test_every_cited_work_is_in_the_reference_list():
         assert re.search(r"\*\*" + re.escape(surname) + r"[^\n]*\(" + str(year) + r"\)", refs), (surname, year, "missing from references")
         assert re.search(re.escape(surname) + r"[^()]{0,80}\(?" + str(year), text), (surname, year, "not cited")
     entries = re.findall(r"^- \*\*([^*]+)\*\*", refs, flags=re.M)
-    assert len(entries) == len(CITED) + 2  # plus SR 11-7 and the FASB update
+    assert len(entries) == len(CITED) + 6  # plus IAAO, SR 11-7, SR 26-2, the FASB update, the ACL policy statement, the Fed scenarios
+    assert "SR 26-2" in refs and "supersede" in refs.lower()
 
 
 
@@ -276,3 +278,98 @@ def test_champions_keep_ranking_out_of_time():
     lgb = [p[(c, "train", "m2")] - p[(c, "oot", "m2")] for c in ("sale", "new_lien")]
     lgb.append(e[("in sample 2006-19", "M2 LightGBM")] - e[("out of time 2020-26", "M2 LightGBM")])
     assert max(lgb) > max(drops)
+
+
+def test_metric_reconciliation_and_disclosure_screen():
+    """P05 recomputed metrics; V10 disclosure screen; the refinance-incentive and PSI statements in the text."""
+    rec = pd.read_csv(P1 / "r5_eval_reconciliation.csv")
+    assert set(rec.metric) == {"brier_x1e4", "logloss"} and set(rec.split) == {"spatial", "spatial_oot"} and set(rec.model) == {"m1"}
+    g = pd.read_csv(P1 / "empirical_hazard_by_gap.csv")
+    in_money = g[g.gap.isin(["(-6.0, -5.0]", "(-5.0, -4.0]", "(-4.0, -3.0]", "(-3.0, -2.0]", "(-2.0, -1.0]"])]
+    assert in_money.rows.sum() == 1_146_780 and in_money.rows.sum() / g.rows.sum() > 0.08
+    near = g[g.gap.isin(["(-1.0, 0.0]", "(0.0, 1.0]"])]
+    rate = lambda d: (d.rows * d.new_lien).sum() / d.rows.sum()
+    assert round(100 * rate(in_money), 3) == 0.138 and round(100 * rate(near), 3) == 0.132   # only about 5% faster
+    b = pd.read_csv(P2 / "r5_disclosure_denominator_bridge.csv").set_index("state")
+    assert b.passes_as_coded.all()                                      # the screen as coded did not bind
+    fail = sorted(b.index[~b.passes_intended_screen])
+    assert fail == ["AK", "ID", "IN", "KS", "ME", "MO", "MS", "MT", "NM", "TX", "UT", "WY"]
+    assert b.loc["TX", "share_of_all_resales"] == pytest.approx(0.638, abs=5e-4)
+    a = pd.read_csv(P2 / "r5_accuracy_by_screen_version.csv")
+    def md(split, version, est):
+        r = a[(a.split == split) & a.version.str.startswith(version) & a.estimator.str.contains(est, regex=False)]
+        return round(100 * r.MdAPE.iloc[0], 1)
+    assert (md("oot", "as published", "C3"), md("oot", "as published", "market value")) == (11.4, 16.3)
+    assert (md("oot", "excluding the states that fail", "C3"), md("oot", "excluding the states that fail", "market value")) == (10.7, 16.4)
+    assert md("spatial", "excluding the states that fail", "C3") == md("spatial", "as published", "C3") == 12.2
+    n = pd.read_csv(P2 / "r5_avm_data_counts.csv").value.tolist()
+    assert n == [2_418_184, 10_335_897, 1_286_709, 748_303]
+    sp = pd.read_csv(P2 / "r4_accuracy_spatial_oot.csv")
+    assert round(100 * sp[sp.window.str.startswith("2024-07")].c3_minus_mktval_MdAPE_common.iloc[0], 1) == -6.1
+    t = pd.read_csv(P2 / "r4_accuracy_by_exante_tier.csv")
+    c3 = t[(t.decile == 1) & t.estimator.str.startswith("C3")].set_index(["tier_basis", "sample"]).MdAPE
+    assert round(100 * c3[("realised_price", "sales with a prior recorded sale")], 1) == 26.2   # same homes as the 16.6%
+
+
+def test_index_known_at_the_cutoff_and_survival_weighted_cpr():
+    """Checks: the as-of house-price index refit (report §5.7) and survival-weighted stress CPR (§6)."""
+    e = pd.read_csv(P1 / "r5_asof_index_eval.csv")
+    e["v"] = e["index"].str.startswith("as-of").map({True: "asof", False: "pub"})
+    w = e.pivot_table(index=["cause", "split", "model"], columns="v", values=["auc", "pred_over_actual"])
+    m1 = w.xs("m1", level="model")
+    assert (m1[("auc", "asof")] - m1[("auc", "pub")]).abs().max() <= 0.001
+    assert (m1[("pred_over_actual", "asof")] - m1[("pred_over_actual", "pub")]).abs().max() <= 0.003
+    assert round(w.loc[("new_lien", "train", "m2"), ("auc", "pub")], 3) == 0.704 and round(w.loc[("new_lien", "train", "m2"), ("auc", "asof")], 3) == 0.687
+    s = json.loads((P1 / "r5_asof_index_summary.json").read_text())
+    assert round(s["gap_pos_odds_ratio"]["new_lien"]["as_of"], 2) == 0.89
+    assert round(s["pool_cpr_backtest"]["as_of"]["oot | m1"]["MAE_monthly_cpr_pp"], 2) == 0.43
+    c = pd.DataFrame(s["m1_key_coefficients"])
+    eq = c[c.term.isin(["log_appr", "est_ltv"])]
+    assert ((eq.coef - eq.coef_published).abs() / eq.se_published).max() < 0.1
+    st = pd.read_csv(P1 / "stress_summary.csv")
+    assert (st.avg_cpr_count_24m_pct - st.avg_cpr_count_survival_weighted_24m_pct).abs().max() <= 0.02
+    assert (st.delta_cpr_count_vs_base_pp - st.delta_cpr_survival_weighted_vs_base_pp).abs().max() <= 0.01
+    r = st.set_index(["scenario", "model"])
+    assert round(r.loc[("-200bp", "m1"), "delta_cpr_survival_weighted_vs_base_pp"], 2) == 1.24
+
+
+def test_prepayment_and_valuation_sensitivities():
+    """Ranking by month, the third exit, recalibration by cause, exact-rank conformal, the unseen-state embedding."""
+    m = pd.read_csv(P1 / "r6_auc_by_month.csv").set_index(["split", "cause"])
+    assert m.loc[("train", "sale"), "months_lightgbm_ranks_better"] == 26 and m.loc[("oot", "sale"), "months_lightgbm_ranks_better"] == 9
+    assert m.loc[("spatial_oot", "sale"), "months_lightgbm_ranks_better"] == 4
+    assert round(m.loc[("oot", "sale"), "mean_auc_difference_lgb_minus_logit"], 3) == 0.003
+    c = pd.read_csv(P1 / "r6_cum12_third_exit.csv")
+    c = c[(c.split == "oot") & (c.model == "m1")].set_index("version")
+    cens = c.loc["other transfers removed (censored)"]; pub = c.loc["published (other transfers count as no event)"]
+    assert cens.other_transfers_removed == 448 and round(pub.actual_rate_pct, 2) == 3.90 and round(cens.actual_rate_pct, 2) == 3.91
+    assert round(pub.auc_12m, 3) == round(cens.auc_12m, 3)
+    r = pd.read_csv(P1 / "r6_recalibration_by_cause.csv").set_index(["split", "model", "forecast"]).MAE_monthly_cpr_pp
+    assert round(r[("oot", "m1", "recalibration by cause (t-2..t-4)")], 2) == 0.27 and round(r[("oot", "m1", "pool recalibration (t-2..t-4)")], 2) == 0.29
+    assert round(r[("spatial_oot", "m1", "recalibration by cause (t-2..t-4)")], 2) == 0.33 and round(r[("spatial_oot", "m1", "pool recalibration (t-2..t-4)")], 2) == 0.32
+    q = pd.read_csv(P2 / "r6_conformal_exact_rank.csv")
+    assert (q.qhat_shift.abs() < 1e-4).all()          # negligible at n = 166,722
+    q = q.set_index(["window", "version"]).coverage
+    assert round(q[("hold-out states, out-of-time months", "exact rank ceil((n+1) x 0.8)")], 3) == 0.761
+    e = pd.read_csv(P2 / "r6_unseen_state_embedding.csv")
+    allm = e[e.window == "all months"].set_index("embedding").c3_blend_mdape
+    assert round(100 * allm["as trained"], 1) == 12.2
+    others = 100 * allm.drop("as trained")
+    assert round(others.min(), 1) == 12.3 and round(others.max(), 1) == 12.7
+    late = 100 * e[e.window == "out-of-time months"].set_index("embedding").c3_blend_mdape
+    assert round(late["as trained"], 1) == 12.8 and round(late.drop("as trained").min(), 1) == 12.9 and round(late.drop("as trained").max(), 1) == 13.5
+
+
+def test_valuation_rerun_on_states_that_pass_the_screen():
+    """V10: the pipeline re-run without the 12 states that fail the price-disclosure screen (report §9)."""
+    a = pd.read_csv(P2 / "r6_screened_accuracy_oot_own_coverage.csv").set_index("estimator")
+    blend = [i for i in a.index if i.startswith("C3")][0]; mv = [i for i in a.index if "market value" in i][0]
+    assert a.loc[blend, "n"] == 460_745 and round(100 * a.loc[blend, "MdAPE"], 1) == 10.7 and round(100 * a.loc[mv, "MdAPE"], 1) == 16.4
+    s = pd.read_csv(P2 / "r6_screened_accuracy_spatial_own_coverage.csv").set_index("estimator")
+    assert round(100 * s.loc[blend, "MdAPE"], 1) == 11.9 and round(100 * s.loc[mv, "MdAPE"], 1) == 12.0
+    b = json.loads((P2 / "r6_screened_bootstrap_b1000.json").read_text())["bootstrap_B1000"]["delta_MdAPE_challenger_minus_mktval"]
+    assert [round(100 * x, 1) for x in (b[0], b[2])] == [-7.9, -5.0] and round(100 * b[1], 1) == -6.5
+    m = pd.read_csv(P2 / "r6_screened_r4_monitoring_backtest.csv"); oot = m[m.window == "out of time"]
+    assert oot[oot.C1_trigger_single_month.astype(str) == "True"].month.min() == "2025-04"
+    assert oot[oot.C1_trigger_two_consecutive.astype(str) == "True"].month.min() == "2025-05"
+    assert round(max(m.prediction_psi_c1.max(), m.max_psi_inputs_not_expected_to_shift.max()), 3) == 0.013

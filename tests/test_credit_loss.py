@@ -74,9 +74,9 @@ def test_payment_relief_finding():
 
 def test_lifetime_loss_model_versus_scenario():
     c = _csv("cecl_allowance.csv"); c = c[c.horizon == "recorded term"].set_index(["scenario", "model"]).loss_over_balance
-    assert c[("baseline", "M1v")] == pytest.approx(0.0337, abs=5e-5) and c[("baseline", "M2")] == pytest.approx(0.0664, abs=5e-5)
-    assert c[("baseline", "M1")] == pytest.approx(0.0574, abs=5e-5) and c[("severe", "M1")] == pytest.approx(0.0847, abs=5e-5)
-    assert c[("severe", "M1v")] - c[("baseline", "M1v")] == pytest.approx(0.0071, abs=1e-4)
+    assert c[("baseline", "M1v")] == pytest.approx(0.0342, abs=5e-5) and c[("baseline", "M2")] == pytest.approx(0.0694, abs=5e-5)
+    assert c[("baseline", "M1")] == pytest.approx(0.0582, abs=5e-5) and c[("severe", "M1")] == pytest.approx(0.0836, abs=5e-5)
+    assert c[("severe", "M1v")] - c[("baseline", "M1v")] == pytest.approx(0.0060, abs=1e-4)
     macro_models = ["M1", "M1r", "M1v", "M2"]
     model_spread = max(c[("baseline", m)] for m in macro_models) - min(c[("baseline", m)] for m in macro_models)
     scenario_spread = max(c[("severe", m)] - c[("baseline", m)] for m in macro_models)
@@ -151,10 +151,11 @@ def test_input_checks_added_at_review():
 def test_allowance_after_remediation():
     c = _csv("r2_cecl_allowance.csv").set_index(["scenario", "model"]).loss_over_balance
     base = {m: c[("baseline", m)] for m in ("M1v", "R2a", "R2b")}
-    assert min(base.values()) == pytest.approx(0.0337, abs=5e-5) and max(base.values()) == pytest.approx(0.0436, abs=5e-5)
+    assert min(base.values()) == pytest.approx(0.0346, abs=5e-5) and max(base.values()) == pytest.approx(0.0448, abs=5e-5)
     adds = [c[("severe", m)] - c[("baseline", m)] for m in ("M1v", "R2a", "R2b")]
-    assert min(adds) == pytest.approx(0.0012, abs=1e-4) and max(adds) == pytest.approx(0.0082, abs=1e-4)
-    assert c[("baseline", "M1")] == pytest.approx(0.060, abs=5e-4)
+    assert min(adds) == pytest.approx(-0.0005, abs=1e-4) and max(adds) == pytest.approx(0.0053, abs=1e-4)
+    assert c[("baseline", "M1")] == pytest.approx(0.062, abs=5e-4) and c[("severe", "M1")] == pytest.approx(0.082, abs=5e-4)
+    assert max(base.values()) - min(base.values()) > max(adds)        # model choice moves the estimate more than the scenario
 
 
 def test_disclosures_added_at_second_review():
@@ -211,13 +212,18 @@ def test_robustness_checks_added_at_review():
         ("True", "True"): 2, ("True", "False"): 0, ("False", "True"): 4, ("False", "False"): 1}
     a = _csv("r4_allowance_sensitivities.csv"); a["pct"] = 100 * a.loss_over_balance
     v = a.set_index(["variant", "model", "scenario"]).pct
-    for key, want in {("base", "M1v", "baseline"): 3.37, ("base", "R2a", "baseline"): 4.36, ("ii", "M1v", "baseline"): 3.55,
-                      ("ii", "R2a", "severe"): 5.40, ("iii", "M1v", "baseline"): 3.36, ("iv", "R2a", "baseline"): 3.89,
-                      ("iv", "R2a", "severe"): 4.71, ("v", "M1v", "baseline"): 3.91, ("v", "M1v", "severe"): 4.64}.items():
+    for key, want in {("base", "M1v", "baseline"): 3.46, ("base", "R2a", "baseline"): 4.48, ("base", "R2b", "severe"): 3.42,
+                      ("ii", "M1v", "baseline"): 3.64, ("ii", "R2a", "severe"): 5.22, ("iii", "M1v", "baseline"): 3.44,
+                      ("iv", "R2a", "baseline"): 3.98, ("iv", "R2a", "severe"): 4.57, ("v", "M1v", "baseline"): 4.01,
+                      ("v", "M1v", "severe"): 4.48}.items():
         assert v[key] == pytest.approx(want, abs=0.005), key
-    assert v[("i", "M1v", "increment: charge-off channel")] == pytest.approx(0.43, abs=0.005)
-    assert v[("i", "M1v", "increment: payoff channel")] == pytest.approx(0.20, abs=0.005)
-    assert v[("i", "R2b", "increment: charge-off channel")] == pytest.approx(-0.06, abs=0.005)
+    base = a[a.variant == "base"].set_index(["model", "scenario"]).pct
+    slow = a[a.variant == "iii"].set_index(["model", "scenario"]).pct
+    assert (slow - base.reindex(slow.index)).abs().max() <= 0.035   # reversion speed: 0.03 points or less
+    assert v[("i", "M1v", "increment: charge-off channel")] == pytest.approx(0.31, abs=0.005)
+    assert v[("i", "M1v", "increment: payoff channel")] == pytest.approx(0.10, abs=0.005)
+    assert v[("i", "R2b", "increment: charge-off channel")] == pytest.approx(-0.13, abs=0.005)
+    assert v[("i", "R2b", "increment: payoff channel")] == pytest.approx(0.08, abs=0.005)
     lag = json.loads((P3 / "r4_recording_lag.json").read_text())
     assert lag["months_with_zero_recorded_payoffs_2006-01..2026-09"] == ["2026-09"]
     assert lag["payoff_oot_pred_over_actual_M1"]["2020-01..2026-08 (excluding 2026-09)"] == pytest.approx(1.105, abs=5e-4)
@@ -236,3 +242,98 @@ def test_robustness_checks_added_at_review():
     assert b["bootstrap_difference_p2_5"] == pytest.approx(0.095, abs=5e-4) and b["bootstrap_difference_p97_5"] == pytest.approx(0.166, abs=5e-4)
     k = _csv("r4_final_fit_coefficients.csv").set_index(["model", "term"]).beta
     assert k[("M1v", "era4")] == pytest.approx(-1.14, abs=0.005) and k[("M1v", "era3")] == pytest.approx(-0.96, abs=0.005)
+
+
+def test_scenario_path_survival_and_input_dates():
+    """L16 scenario path, survival boundary, L15 input dates: the latest tables and the bridge to the earlier ones."""
+    path = _csv("r5_scenario_path_reconciliation.csv")
+    after = path[path.after_scenario]
+    assert (after.dur4_from_levels - after.ur_12m_change).abs().max() < 1e-9          # changes follow the levels
+    assert (after.dprime4_from_levels - after.prime_12m_change).abs().max() < 1e-9
+    assert (after.dur4_own_reversion - after.ur_12m_change).abs().max() > 2          # the earlier runs did not
+    before = path[~path.after_scenario]
+    assert (before.dur4_own_reversion == before.dur4_from_levels).all()              # history and scenario untouched
+    br = _csv("r5_allowance_update_bridge.csv")
+    cand = br[br.source.str.startswith("46") & br.model.isin(["M1v", "R2a", "R2b"])]
+    pub = cand.pivot(index="model", columns="scenario", values="loss_over_balance_earlier")
+    cor = cand.pivot(index="model", columns="scenario", values="loss_over_balance_latest")
+    assert round(100 * pub.baseline.min(), 1) == 3.4 and round(100 * pub.baseline.max(), 1) == 4.4
+    assert round(100 * cor.baseline.min(), 1) == 3.5 and round(100 * cor.baseline.max(), 1) == 4.5
+    assert round(100 * (pub.severe - pub.baseline).min(), 1) == 0.1 and round(100 * (pub.severe - pub.baseline).max(), 1) == 0.8
+    assert round(100 * (cor.severe - cor.baseline).min(), 2) == -0.05 and round(100 * (cor.severe - cor.baseline).max(), 2) == 0.53
+    assert round(100 * (pub.severe - pub.baseline).min(), 2) == 0.12 and round(100 * (pub.severe - pub.baseline).max(), 2) == 0.82
+    champ = br[br.source.str.startswith("44") & (br.model == "M1") & (br.horizon == "recorded term") & (br.scenario == "baseline")].iloc[0]
+    assert round(100 * champ.loss_over_balance_earlier, 1) == 5.7 and round(100 * champ.loss_over_balance_latest, 1) == 5.8
+    old = pd.read_csv(P3 / "before_2026-11-19" / "r2_cecl_allowance.csv").set_index(["scenario", "model"]).loss_over_balance
+    assert old[("baseline", "M1v")] == pytest.approx(0.0337, abs=5e-5)                 # the earlier table is kept as published
+    for f in ("cecl_hazard_mass_checks.csv", "r2_hazard_mass_checks.csv"):
+        m = _csv(f)
+        assert (m.rows_sum_above_1 == 0).all() and m.max_sum.max() < 1                 # survival never hits the boundary
+    d = _csv("r5_input_date_checks.csv").set_index("check").loans
+    assert d["  of which in the modelled population (first build dated them 2026-09)"] == 16
+    assert d["first disbursement more than 12 months before approval (population)"] == 9
+    assert d["population, first build"] == 994_992 and d["population, first build"] - d["population, with the L15 checks"] == 25
+    assert d["charge-offs in the risk window, first build"] - d["charge-offs in the risk window, with the L15 checks"] == 16
+    u = _csv("r5_unemployment_2020.csv").set_index(["year", "q"]).ur
+    assert u[(2020, 2)] - u[(2020, 1)] == pytest.approx(9.2, abs=0.05)
+
+
+def test_backtest_with_the_lag_chosen_at_each_origin():
+    """Report §14: choosing the macro lag at each origin from data available then does worse."""
+    s = json.loads((P3 / "r5_backtest_lag_by_origin_summary.json").read_text())
+    assert s["chosen_lags"] == {"2009-12": 24, "2011-12": 12, "2013-12": 12, "2015-12": 0, "2017-12": 12, "2019-12": 12,
+                                "2021-12": 24, "2023-12": 12}
+    got = {m: (s[m]["within_25pct_fixed_lag_12"], s[m]["within_25pct_lag_by_origin"]) for m in ("M1", "M1v", "M1r")}
+    assert got == {"M1": (2, 1), "M1v": (4, 3), "M1r": (3, 1)}
+    assert round(s["M1v"]["per_origin"]["2009-12"]["fixed_lag_12"], 2) == 0.92 and round(s["M1v"]["per_origin"]["2009-12"]["lag_by_origin"], 2) == 1.72
+    for m in ("M1", "M1v", "M1r"):
+        assert s[m]["mean_abs_log_ratio_lag_by_origin"] > s[m]["mean_abs_log_ratio_fixed_lag_12"]
+
+
+def test_inference_history_channels_and_book():
+    """Report §14: Newey-West inference, published 2026 history, exact scenario channels, severity cap, book, term field."""
+    t = _csv("r6_inference_time_blocks.csv").set_index(["model", "term"])
+    assert round(t.loc[("M1", "dur4"), "z_hac_12m"], 1) == 3.6 and round(t.loc[("M1", "dur4"), "z_hac_24m"], 1) == 3.2
+    assert round(t.loc[("M1v", "dur4"), "z_hac_12m"], 1) == 2.2 and round(t.loc[("M1v", "dur4"), "z_hac_24m"], 1) == 2.0
+    eras = t.loc[[k for k in t.index if k[0] == "M1v" and k[1].startswith("era")]]
+    assert round(eras.z_hac_12m.abs().min(), 1) == 2.1 and round(eras.z_hac_24m.abs().min(), 1) == 2.2
+    d = json.loads((P3 / "r6_dur4_difference_time_blocks.json").read_text())
+    assert round(d["se_hac_12m"], 3) == 0.035 and round(d["se_hac_24m"], 3) == 0.042
+    assert round(d["block_bootstrap"]["p2_5"], 3) == 0.036 and round(d["block_bootstrap"]["p97_5"], 3) == 0.173
+    h = _csv("r6_allowance_published_history.csv"); h["pct"] = (100 * h.loss_over_balance).round(2)
+    h = h.set_index(["history", "model", "scenario"]).pct
+    assert [h[("published history to 2026Q3", m, "baseline")] for m in ("M1v", "R2a", "R2b")] == [3.45, 4.47, 3.48]
+    assert [h[("published history to 2026Q3", m, "severe")] for m in ("M1v", "R2a", "R2b")] == [3.95, 5.11, 3.53]
+    assert [h[("as published", m, "baseline")] for m in ("M1v", "R2a", "R2b")] == [3.46, 4.48, 3.47]
+    c = _csv("r6_scenario_channels.csv").set_index(["model", "channel"])
+    assert [round(c.loc[("M1v", k), "shapley_pp"], 2) for k in ("charge-off hazard", "payoff hazard")] == [0.32, 0.08]
+    assert [round(c.loc[("R2b", k), "shapley_pp"], 2) for k in ("charge-off hazard", "payoff hazard")] == [-0.13, 0.07]
+    assert round(c.loc[("M1v", "severity"), "shapley_pp"], 3) == 0.006 and round(c.loc[("R2b", "severity"), "shapley_pp"], 3) == 0.005
+    assert (c.order_chargeoff_first_pp - c.shapley_pp).abs().max() <= 0.015 and (c.order_severity_first_pp - c.shapley_pp).abs().max() <= 0.015
+    s = _csv("r6_severity_capping.csv").set_index("split").loc["out of time 2020-26"]
+    assert s.above_original_amount == 411 and s.chargeoffs == 14_808 and round(s.dollars_removed_by_cap_share, 3) == 0.008
+    assert round(s.pred_over_recorded_actual, 2) == 1.01 and round(s.pred_over_capped_actual, 2) == 1.02
+    b = _csv("r6_book_bridge.csv"); a = b[b.origin == "2026-09 (allowance)"].set_index("item").loans
+    assert a.iloc[0] == 232_292 and sorted(a.iloc[1:].tolist()) == [354, 2_790, 5_047, 5_047]
+    left = b[b.item.str.startswith("open at T")].loans
+    assert left.min() >= 2_400 and left.max() <= 3_600
+    ab = _csv("r6_term_ablation.csv").set_index(["risk_set", "term_features"]).oot_auc.round(3)
+    assert ab[("published (not cut)", False)] == 0.737 and ab[("published (not cut)", True)] == 0.935
+    assert ab[("cut at the recorded term", False)] == 0.723 and ab[("cut at the recorded term", True)] == 0.926
+    w = _csv("r6_within_month_auc.csv").set_index("model").oot_auc_within_month.round(3)
+    assert w["M1 logit"] == 0.710 and w["M2 LightGBM"] == 0.741
+
+
+def test_lag_by_origin_and_rebuild():
+    """Report §14: the second-round candidates with the lag chosen at each origin; the rebuild with the L15 checks."""
+    s = json.loads((P3 / "r6_backtest_lag_by_origin_r2_summary.json").read_text())
+    got = {m: (s[m]["within_25pct_fixed_lag_12"], s[m]["within_25pct_lag_by_origin"]) for m in ("M1v", "R2a", "R2b", "R2c")}
+    assert got == {"M1v": (4, 3), "R2a": (5, 4), "R2b": (4, 3), "R2c": (4, 4)}
+    r = _csv("r6_rebuild_l15_comparison.csv").set_index("quantity")
+    counts = r[r.index.str.contains("origins within 25%") & ~r.index.str.contains("chosen at each origin")]
+    assert (counts.published == counts.rebuilt_with_l15_checks).all()           # no pass count changes
+    assert r.loc["loans in the population", "rebuilt_with_l15_checks"] == 994_967
+    assert r.loc["charge-offs in the risk window", "rebuilt_with_l15_checks"] == 115_101
+    assert round(r.loc["M1 logit: out of time excluding 2020-04..2021-12", "rebuilt_with_l15_checks"], 2) == 1.77
+    assert round(r.loc["M2 LightGBM: out-of-time AUC", "rebuilt_with_l15_checks"], 3) == 0.736
+    assert r.loc["lag chosen at the 2009-12 origin (months)", "published"] == 24 and r.loc["lag chosen at the 2009-12 origin (months)", "rebuilt_with_l15_checks"] == 12

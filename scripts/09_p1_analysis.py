@@ -39,6 +39,7 @@ for c in ["sale", "new_lien"]:
             fix_rows.append({"cause": c, "split": sp, "model": m, "auc": auc(y, s_), "pred_over_actual": s_.mean() / y.mean()})
 fx = pd.DataFrame(fix_rows); fx.to_csv(OUT / "m1_unseen_state_fix.csv", index=False); print(fx.round(4).to_string(index=False))
 ev = pd.read_csv(OUT / "eval_monthly_hazard.csv")        # from 08; replace naive M1 spatial rows with the fixed ones
+# (only AUC and predicted / actual are replaced here; 36_p1_eval_reconcile.py recomputes every metric from preds_v2)
 for _, r in fx[fx.model == "m1"].iterrows():
     ev.loc[(ev.cause == r.cause) & (ev.split == r.split) & (ev.model == "m1"), ["auc", "pred_over_actual"]] = [r.auc, r.pred_over_actual]
 ev.to_csv(OUT / "eval_monthly_hazard_final.csv", index=False)

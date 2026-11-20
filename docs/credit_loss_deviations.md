@@ -55,7 +55,7 @@ states.
 ## D4. Remediation candidates for the vintage finding, written before they were run (2026-11-18)
 
 **Evidence.** With the term-free design, the champion logit fitted on 2006–2019 is calibrated in sample overall
-(predicted ÷ actual 1.00) but not by approval cohort: 0.69–0.77 for FY2006–FY2007 loans and 1.3–2.3 for every cohort
+(predicted ÷ actual 1.00) but not by approval cohort: 0.69–0.82 for FY2006–FY2008 loans and 1.3–2.3 for every cohort
 from FY2009 to FY2019 (`reports/p3/vintage_pred_vs_actual.csv`). Out of time it over-predicts 2020–2026 charge-offs
 2.8-fold. The unemployment term was estimated on one crisis whose charge-offs came mostly from FY2005–FY2008 loans,
 so it may be carrying cohort quality as well as macro sensitivity.
@@ -148,7 +148,7 @@ recommendation (outside the pre-set adoption rule, labelled as such):** use M1v 
 only when it is fitted on at least one full credit cycle, report the range across M1v, R2a and R2b, and do not use it
 for 24-month or quarterly charge-off forecasts. The vintage finding stays open.
 
-## Review notes (2026-11-18): checks after the three rounds; no model refitted, no result changed
+## Notes (2026-11-18): checks after the three rounds; no model refitted, no result changed
 
 - **Sampling design.** The 5% of non-event months is drawn from all loan-months by one hash, so each cause-specific
   fit samples its non-events, including months with the competing event, at the same rate; the log 0.05 intercept
@@ -163,21 +163,41 @@ for 24-month or quarterly charge-off forecasts. The vintage finding stays open.
 - **L12.** The Fed files end their history in 2025Q4, so 2026Q1–Q3 carry scenario values in the estimation window
   and in each projection (`macro_2026_scenario_vs_published.csv`). Not re-run.
 - **Disposition.** Research and benchmark use only; outputs are expected gross SBA write-offs under stated scenarios.
-- **Corrections to the text above.** D4's "FY2009 to FY2019" should read FY2009–FY2018 (FY2019 is 2.73). D1's
+- **Text notes.** D4's "FY2009 to FY2019" should read FY2009–FY2018 (FY2019 is 2.73). D1's
   "57% of its split gain" was read from the first-fit model and is not in a published table. "Within ±25%" in rule
   (ii) and D6 is 0.75–1.25; rule (i) and the monitoring trigger use 0.80–1.25.
 - **Hashes.** The plan hash can be checked against `docs/credit_loss_plan.md`. The D5 and D6 hashes are of this
   file in the private workspace before each run; the published copy has renamed paths, so they cannot be re-derived
   from this repository.
-- **D6 without O1 (sensitivity, run at review).** `scripts/47_p3_lifetime_backtest.py --no-overlay`: the same counts
+- **D6 without O1 (sensitivity).** `scripts/47_p3_lifetime_backtest.py --no-overlay`: the same counts
   (M1v 3, R2a 3, R2b 4 of 6; no model meets the rule), and the three candidates within ±25% at 2015–2019 (0.87–1.21)
   (`r3_lifetime_backtest_no_overlay.csv`, `r3_summary_no_overlay.json`).
 - **Payoff hazard specification.** The payoff logit includes the unlagged 4-quarter change in unemployment
   (`src/mval/p3.py`, CreditDesign for cause "pif"); the plan listed only the prime rate and its 4-quarter change. The
   term was in every fit from the first; it is logged here because the plan did not name it.
 - **24-month backtest script (43).** The payoff logit is fitted with the unemployment change at the charge-off lag but
-  scored with the unlagged value; scripts 45–47 are consistent. The corrected run is `scripts/48_p3_backtest_v2.py`
+  scored with the unlagged value; scripts 45–47 are consistent. The rerun is `scripts/48_p3_backtest_v2.py`
   (report §14); the original tables are kept and the published figures use them.
 - **Adaptive design.** Each round's rule was written before it ran, but each round's candidates were designed after the
   previous round's results, and overlay O1 with knowledge of 2020–21. Results across rounds are therefore not
   independent tests.
+
+## Update (2026-11-19)
+
+- **D3 reversion, as implemented (L16).** The reversion after 2029Q1 was applied to every input separately, so the
+  4-quarter changes in unemployment and the prime rate drifted to their own averages instead of following the reverted
+  levels. D3 describes a reversion of the macro path, so the changes are now taken from the reverted levels
+  (`src/mval/p3.py`, `changes_from_levels`), and scripts 44, 46 and 50 were re-run. The fits are unchanged. The
+  lifetime-loss tables that moved are kept as first published in `reports/p3/before_2026-11-19/`, and
+  `r5_allowance_update_bridge.csv` sets each estimate beside its update (report §9).
+- **Survival recursion.** Scripts 44, 46 and 50 now compound start-of-month survival directly (`start_survival`). The
+  earlier form returned zero when a month's survival term was zero, which no projected month reached
+  (`cecl_hazard_mass_checks.csv`, `r2_hazard_mass_checks.csv`), so no result changed.
+- **Input dates (L15).** Sixteen charge-offs with no date had been dated at the cutoff, and nine loans first disbursed
+  more than a year before approval had been kept. `scripts/40_p3_build.py` now drops both (`LEGACY_FILTERS = True`
+  reproduces the published build). The published tables were not rebuilt; the counts that bound the effect are in
+  `r5_input_date_checks.csv`.
+- **Figures in this log without a published table.** D1's "57% of its split gain" and D4's separated coefficient
+  (−10.3, s.e. 177) were read from fitted models that are not published. D5's "one to three years" from default to
+  charge-off is the author's reading of SBA liquidation practice; it is not estimated from these data, which have no
+  default date. They are kept because the log is a dated record, but no conclusion rests on them.

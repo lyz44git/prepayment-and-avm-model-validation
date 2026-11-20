@@ -29,7 +29,7 @@ import numpy as np, pandas as pd
 import statsmodels.api as sm
 from _paths import WORK, REPORTS
 from mval.p3 import (W1, LOG_RATE, SAMPLE_RATE, HOLDOUT_STATES, mi, CreditDesign, macro_quarterly, macro_monthly,
-                     downturn_exposure, ns_basis, AGE_KNOTS, SECTORS, balance_share, month_label, era_of)
+                     downturn_exposure, ns_basis, AGE_KNOTS, SECTORS, balance_share, month_label, era_of, start_survival)
 
 R = REPORTS / "p3"; OUT = WORK / "p3"; FED = Path("data_external/fed2026")
 L = json.loads((R / "champion.json").read_text())["lag_months"]; WIN = 36
@@ -158,8 +158,7 @@ def run(task, chunk=25_000):
             p["dur4_pif"] = mmp.dur4.reindex(p.m).to_numpy()
         hc, hp = pred(mods[key], p, "co"), pred(mods["pif"], p, "pif") * pif_scale
         sv = np.clip(sev.predict(sev_X(p)), 0, 1)
-        q = np.clip(1 - hc - hp, 0, 1)
-        sp = pd.DataFrame({"i": idx, "q": q}).groupby("i").q.cumprod().to_numpy() / np.where(q > 0, q, 1)
+        sp, _, _ = start_survival(idx, hc, hp)
         el = sp * hc * sv * p.gross_approval.to_numpy()
         tot[s:s + len(b)] = np.bincount(idx, weights=el, minlength=len(b))
         path += np.bincount(step, weights=el, minlength=NSTEP)

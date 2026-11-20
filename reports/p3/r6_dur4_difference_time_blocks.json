@@ -1,0 +1,14 @@
+{
+  "difference_m1_minus_m1v_dur4": 0.11198435942094467,
+  "se_month_cluster": 0.0138086105692052,
+  "se_hac_12m": 0.03522857037163634,
+  "se_hac_24m": 0.04207012554717486,
+  "block_bootstrap": {
+    "block_months": 12,
+    "draws": 2000,
+    "p2_5": 0.03587562620659628,
+    "p97_5": 0.172757923406253,
+    "share_at_or_below_zero": 0.0015
+  },
+  "months": 168
+}

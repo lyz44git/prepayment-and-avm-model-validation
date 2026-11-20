@@ -1,0 +1,45 @@
+quantity,published,rebuilt_with_l15_checks
+loans in the population,994992.0,994967.0
+charge-offs in the risk window,115117.0,115101.0
+M1 logit: out-of-time AUC,0.6807389439486188,0.6808032765024901
+M1 logit: out-of-time predicted / actual,2.7917502221120083,2.811673731233604
+M2 LightGBM: out-of-time AUC,0.7366996230834528,0.7364856155105599
+M2 LightGBM: out-of-time predicted / actual,2.4332344929722125,2.4486260995819995
+M1 logit: out of time excluding 2020-04..2021-12,1.7530110560323628,1.7656612942771293
+M1v +O1: out of time excluding relief months,0.8052181933299709,0.8087090728717803
+"M1v +O1: 24-month backtest, origins within 25% (of 8)",4.0,4.0
+R2a +O1: out of time excluding relief months,0.7315061075629111,0.7338597674026838
+"R2a +O1: 24-month backtest, origins within 25% (of 8)",5.0,5.0
+R2b +O1: out of time excluding relief months,0.8349254794743712,0.8386668275338884
+"R2b +O1: 24-month backtest, origins within 25% (of 8)",4.0,4.0
+R2c +O1: out of time excluding relief months,0.7215115558328911,0.7240204001584701
+"R2c +O1: 24-month backtest, origins within 25% (of 8)",4.0,4.0
+"M1: first 24-month backtest, origins within 25% (of 8)",2.0,2.0
+"M1v: first 24-month backtest, origins within 25% (of 8)",4.0,4.0
+"M1r: first 24-month backtest, origins within 25% (of 8)",3.0,3.0
+"M1: lifetime-to-date backtest, origins within 25% (of 6)",0.0,0.0
+"M1v: lifetime-to-date backtest, origins within 25% (of 6)",3.0,3.0
+"R2a: lifetime-to-date backtest, origins within 25% (of 6)",3.0,3.0
+"R2b: lifetime-to-date backtest, origins within 25% (of 6)",4.0,4.0
+champion: 2020-21 relief-window ratio from 2019-12,7.689718202687837,7.744938504507957
+"M1v (overlay O1): lifetime loss / balance, baseline",0.0346028954103993,0.0345388212491328
+"M1v (overlay O1): lifetime loss / balance, severe",0.0387082421748555,0.0386142507969689
+"R2a (overlay O1): lifetime loss / balance, baseline",0.0447661636482121,0.0445478179731858
+"R2a (overlay O1): lifetime loss / balance, severe",0.0500772979596799,0.049804265272009
+"R2b (overlay O1): lifetime loss / balance, baseline",0.0347172476232775,0.0346498283083866
+"R2b (overlay O1): lifetime loss / balance, severe",0.0342267142590973,0.0341633522762115
+"M1 (overlay O1): lifetime loss / balance, baseline",0.0621505467988701,0.062220761387441
+"M1 (overlay O1): lifetime loss / balance, severe",0.0821558121157178,0.082269506851488
+"champion (no overlay): lifetime loss / balance, baseline",0.0581962941560874,0.0582631377512035
+"unemployment coefficient, M1",0.2146339990825343,0.2156898130606986
+"unemployment coefficient, M1v",0.1026496396615896,0.1038377358519018
+"drop in the coefficient, month-cluster bootstrap 2.5%",0.09495766524887597,0.09450339270086308
+"drop in the coefficient, month-cluster bootstrap 97.5%",0.16582117996406226,0.16546814963047807
+lag chosen at the 2009-12 origin (months),24.0,12.0
+"M1: backtest with the lag chosen at each origin, within 25% (of 8)",1.0,2.0
+"M1v: backtest with the lag chosen at each origin, within 25% (of 8)",3.0,4.0
+"M1r: backtest with the lag chosen at each origin, within 25% (of 8)",1.0,2.0
+"M1v +O1: backtest with the lag chosen at each origin, within 25% (of 8)",3.0,4.0
+"R2a +O1: backtest with the lag chosen at each origin, within 25% (of 8)",4.0,5.0
+"R2b +O1: backtest with the lag chosen at each origin, within 25% (of 8)",3.0,3.0
+"R2c +O1: backtest with the lag chosen at each origin, within 25% (of 8)",4.0,4.0

@@ -8,7 +8,7 @@ import numpy as np, pandas as pd
 import statsmodels.api as sm
 from _paths import WORK, REPORTS
 from mval.p3 import (W1, LOG_RATE, SAMPLE_RATE, HOLDOUT_STATES, CreditDesign, macro_quarterly, macro_monthly,
-                     downturn_exposure, ns_basis, AGE_KNOTS, SECTORS, balance_share)
+                     downturn_exposure, ns_basis, AGE_KNOTS, SECTORS, balance_share, start_survival)
 
 R = REPORTS / "p3"; OUT = WORK / "p3"; FED = Path("data_external/fed2026")
 L = json.loads((R / "champion.json").read_text())["lag_months"]; WIN = 36
@@ -70,6 +70,7 @@ book = loans[loans.in_window & (loans.status == "active")].copy()
 book["age0"] = W1 - book.disb_m; book["rem"] = np.maximum(book.term - book.age0, 12)
 book["balance"] = book.gross_approval * balance_share(book.rate.fillna(book.rate.median()), book.term, book.age0)
 
+MASS = []
 def run(scen, key, chunk=25_000):
     mm = macro_monthly(macro_quarterly(FED, scen, relief_overlay=True), W1 + 480)
     tot = np.zeros(len(book))
@@ -81,8 +82,8 @@ def run(scen, key, chunk=25_000):
         p = add_macro(p, mm)
         hc, hp = pred(mods[key], p, "co"), pred(mods["pif"], p, "pif")
         sv = np.clip(sev.predict(sev_X(p)), 0, 1)
-        q = np.clip(1 - hc - hp, 0, 1)
-        sp = pd.DataFrame({"i": idx, "q": q}).groupby("i").q.cumprod().to_numpy() / np.where(q > 0, q, 1)
+        sp, n_over, mx = start_survival(idx, hc, hp)
+        MASS.append({"scenario": scen, "model": key, "rows": len(idx), "rows_sum_above_1": n_over, "max_sum": mx})
         tot[s:s + len(b)] = np.bincount(idx, weights=sp * hc * sv * p.gross_approval.to_numpy(), minlength=len(b))
     return tot
 
@@ -98,4 +99,6 @@ for scen in ("baseline", "severe"):
                         "loss_over_balance": e.sum() / book.balance.sum(), "factor": f})
             log(scen, name, f"{e.sum() / book.balance.sum():.3%}")
 pd.DataFrame(out).to_csv(R / "r2_cecl_allowance.csv", index=False)
+pd.DataFrame(MASS).groupby(["scenario", "model"], as_index=False).agg(rows=("rows", "sum"), rows_sum_above_1=("rows_sum_above_1", "sum"),
+    max_sum=("max_sum", "max")).to_csv(R / "r2_hazard_mass_checks.csv", index=False)
 log("done")

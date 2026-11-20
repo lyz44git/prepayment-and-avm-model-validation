@@ -3,6 +3,12 @@
 Reads data_external/sba/FOIA_7a_*_asof_260930.csv (public, U.S. Government Works). Writes data_work/p3/loans.parquet
 (no borrower names, addresses or lender names) and reports/p3/data_profile.json (counts at each filter, field
 coverage by approval era). Plan: docs/credit_loss_plan.md.
+
+Input checks added 2026-11-19 (finding L15): a charge-off with no parseable date is dropped
+rather than dated at the cutoff (DuckDB's least() ignores NULL, so least(NULL, cutoff) returned the cutoff), and a
+loan whose first disbursement precedes its approval by more than 12 months is dropped as a date error. The published
+credit-loss tables were built before these checks; LEGACY_FILTERS = True reproduces them exactly.
+scripts/52_p3_input_and_path_checks.py counts the loans involved (reports/p3/r5_input_date_checks.csv).
 """
 import sys, json; sys.path.insert(0, "scripts"); sys.path.insert(0, "src")
 from _paths import WORK, REPORTS, duck
@@ -12,6 +18,10 @@ OUT = WORK / "p3"; OUT.mkdir(parents=True, exist_ok=True)
 (REPORTS / "p3").mkdir(parents=True, exist_ok=True)
 con = duck(threads=24, mem="120GB")
 src = "data_external/sba/FOIA_7a_FY*_asof_260930.csv"
+LEGACY_FILTERS = False      # True: build exactly as for the published tables (before finding L15)
+CO_DATE = ("least(try_cast(ChargeOffDate AS DATE), DATE '2026-09-30')" if LEGACY_FILTERS else
+           "CASE WHEN try_cast(ChargeOffDate AS DATE) IS NOT NULL THEN least(try_cast(ChargeOffDate AS DATE), DATE '2026-09-30') END")
+DATE_ORDER = "" if LEGACY_FILTERS else "AND NOT (approval IS NOT NULL AND disb < approval - INTERVAL 12 MONTH)"
 con.execute(f"CREATE TABLE raw AS SELECT * EXCLUDE (filename) FROM read_csv('{src}', all_varchar=true, header=true, union_by_name=true, filename=true)")
 prof = {"rows_all_files": con.execute("SELECT count(*) FROM raw").fetchone()[0]}
 con.execute("CREATE TABLE dd AS SELECT DISTINCT * FROM raw")
@@ -23,7 +33,7 @@ CREATE TABLE loans AS
 WITH b AS (
   SELECT *, trim(LoanStatus) AS st,
     try_cast(FirstDisbursementDate AS DATE) AS disb, try_cast(PaidInFullDate AS DATE) AS pif,
-    least(try_cast(ChargeOffDate AS DATE), DATE '2026-09-30') AS co,
+    {CO_DATE} AS co,
     try_cast(TermInMonths AS DOUBLE)::INT AS term, try_cast(GrossApproval AS DOUBLE) AS gross_approval,
     try_cast(SBAGuaranteedApproval AS DOUBLE) AS sba_gty, try_cast(GrossChargeOffAmount AS DOUBLE) AS co_amount,
     try_cast(InitialInterestRate AS DOUBLE) AS rate, try_cast(ApprovalFY AS INT) AS approval_fy,
@@ -57,7 +67,7 @@ SELECT row_number() OVER (ORDER BY approval, gross_approval, term, ProjectState,
 FROM b
 WHERE RevolverStatus = 'N' AND st IN ('P I F','CHGOFF','EXEMPT') AND disb IS NOT NULL AND term >= 6
   AND gross_approval > 0 AND ProjectState IN ({states})
-  AND NOT (st = 'P I F' AND pif IS NULL) AND NOT (st = 'CHGOFF' AND co IS NULL)
+  AND NOT (st = 'P I F' AND pif IS NULL) AND NOT (st = 'CHGOFF' AND co IS NULL) {DATE_ORDER}
 """)
 steps = {
     "term_loans": "SELECT count(*) FROM dd WHERE RevolverStatus = 'N'",

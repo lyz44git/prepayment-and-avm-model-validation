@@ -1,0 +1,14 @@
+check,loans,gross_approval_usd
+"charge-off status, no parseable charge-off date (all records)",26,8238800.0
+  of which in the modelled population (first build dated them 2026-09),16,6789700.0
+  of which in the risk window (undated charge-offs),16,6789700.0
+charge-off dated after 2026-09-30 (capped at 2026-09 under the plan),20,4052500.0
+first disbursement more than 12 months before approval (population),9,4465600.0
+  of which in the risk window (date-order errors),8,3719600.0
+  of which charged off,0,0.0
+"population, first build",994992,430491653738.99005
+"population, with the L15 checks",994967,430480398438.99005
+"charge-offs in the risk window, first build",115117,27720959182.17
+"charge-offs in the risk window, with the L15 checks",115101,27714169482.17
+"charge-offs dated 2026-09, first build",381,145189800.0
+"charge-offs dated 2026-09, with the L15 checks",365,138400100.0

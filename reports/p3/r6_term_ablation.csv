@@ -1,0 +1,5 @@
+risk_set,term_features,trees,oot_rows,oot_chargeoffs,oot_auc,oot_within_month_auc
+published (not cut),False,418,716213,14808,0.7366996230834528,0.7408442559877362
+published (not cut),True,1208,716213,14808,0.9350768755966621,0.938918355635525
+cut at the recorded term,False,340,682686,8854,0.7227068550235397,0.728663098908354
+cut at the recorded term,True,1276,682686,8854,0.926144451373614,0.9303397560575849

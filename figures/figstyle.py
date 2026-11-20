@@ -7,6 +7,7 @@ is typed in by hand.
 import csv
 import json
 import math
+import os
 from pathlib import Path
 
 import matplotlib
@@ -15,24 +16,31 @@ import matplotlib.pyplot as plt
 from matplotlib import patheffects
 from matplotlib.patches import FancyBboxPatch
 
-HALO = [patheffects.withStroke(linewidth=3, foreground="white")]
 
 ROOT = Path(__file__).resolve().parents[1]
 P1, P2, REM, P3 = "reports/p1/", "reports/p2/", "reports/p1/remediation/", "reports/p3/"
 
-INK, INK2, MUTED, GRID = "#1d232b", "#4b5563", "#7b8490", "#e9e6df"
-NAVY, BLUE, LIGHT, PALE, GREY, ORANGE, OSOFT = "#1f3b5c", "#3f78b0", "#a9c4de", "#dfe6ee", "#9aa3ad", "#e07b39", "#f6d9c4"
+THEME = os.environ.get("FIG_THEME", "light")      # "dark" draws the GitHub dark-mode variants (figures/*-dark.svg)
+if THEME == "dark":
+    BG, AXEDGE, GOOD, ONPILL = "#0d1117", "#3a424d", "#1f3a2a", "#0d1117"
+    INK, INK2, MUTED, GRID = "#e6edf3", "#c9d1d9", "#8b949e", "#262c36"
+    NAVY, BLUE, LIGHT, PALE, GREY, ORANGE, OSOFT = "#a5c8f0", "#5a9be0", "#3d6b99", "#1b2430", "#6e7681", "#f0883e", "#4a2e1a"
+else:
+    BG, AXEDGE, GOOD, ONPILL = "#ffffff", "#b9bec5", "#d9eadf", "#ffffff"
+    INK, INK2, MUTED, GRID = "#1d232b", "#4b5563", "#7b8490", "#e9e6df"
+    NAVY, BLUE, LIGHT, PALE, GREY, ORANGE, OSOFT = "#1f3b5c", "#3f78b0", "#a9c4de", "#dfe6ee", "#9aa3ad", "#e07b39", "#f6d9c4"
+HALO = [patheffects.withStroke(linewidth=3, foreground=BG)]
 
 
 def style():
     plt.rcParams.update({
         "font.family": ["Arial", "Helvetica", "DejaVu Sans"], "font.size": 8.5, "axes.titlesize": 9.5,
         "axes.labelsize": 8, "xtick.labelsize": 7.5, "ytick.labelsize": 7.5, "legend.fontsize": 7.5, "legend.frameon": False,
-        "text.color": INK, "axes.labelcolor": INK2, "axes.edgecolor": "#b9bec5", "xtick.color": MUTED, "ytick.color": MUTED,
+        "text.color": INK, "axes.labelcolor": INK2, "axes.edgecolor": AXEDGE, "xtick.color": MUTED, "ytick.color": MUTED,
         "axes.linewidth": 0.6, "xtick.major.width": 0.6, "ytick.major.width": 0.6, "xtick.major.size": 0, "ytick.major.size": 0,
         "xtick.major.pad": 4, "ytick.major.pad": 4, "axes.spines.top": False, "axes.spines.right": False, "axes.spines.left": False,
         "axes.grid": True, "axes.grid.axis": "y", "grid.color": GRID, "grid.linewidth": 0.7, "axes.axisbelow": True,
-        "figure.facecolor": "white", "savefig.facecolor": "white", "lines.solid_capstyle": "round", "lines.dash_capstyle": "round"})
+        "figure.facecolor": BG, "savefig.facecolor": BG, "axes.facecolor": BG, "svg.fonttype": "path", "lines.solid_capstyle": "round", "lines.dash_capstyle": "round"})
 
 
 def load(rel):
@@ -59,7 +67,7 @@ def clean(ax, x=True, y=False):
 
 
 def dot(ax, x, y, color=NAVY, s=46, z=4, marker="o"):  # noqa: D103
-    ax.scatter([x], [y], s=s, color=color, edgecolor="white", linewidth=1.2, zorder=z, marker=marker)
+    ax.scatter([x], [y], s=s, color=color, edgecolor=BG, linewidth=1.2, zorder=z, marker=marker)
 
 
 def pill(ax, x0, x1, y, color, lw=9, z=2, alpha=1.0):
@@ -149,21 +157,26 @@ def save(fig, rel):
     if fig.get_layout_engine() is not None:      # fix the constrained layout before the titles are aligned
         fig.canvas.draw(); fig.set_layout_engine("none")
     align_panel_titles(fig)
-    fig.savefig(ROOT / rel, dpi=300, bbox_inches="tight", pad_inches=0.3)
-    pad_to_content(ROOT / rel)
+    path = ROOT / rel
+    if THEME == "dark":                           # dark-mode variant for <picture> in the README
+        fig.savefig(path.with_name(path.stem + "-dark.svg"), bbox_inches="tight", pad_inches=0.18)
+    else:
+        fig.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.3)
+        pad_to_content(path)
+        fig.savefig(path.with_suffix(".svg"), bbox_inches="tight", pad_inches=0.18)
     plt.close(fig)
-    print("wrote", rel)
+    print("wrote", rel, THEME)
 
 
 def pad_to_content(path, pad=54):
-    """Crop the saved PNG to its visible content and add the same white margin (0.18 in at 300 dpi) on every side."""
+    """Crop the saved PNG to its visible content and add the same margin (0.18 in at 300 dpi) on every side."""
     from PIL import Image, ImageChops
     im = Image.open(path).convert("RGB")
-    box = ImageChops.difference(im, Image.new("RGB", im.size, "white")).point(lambda v: 255 if v > 30 else 0).getbbox()
+    box = ImageChops.difference(im, Image.new("RGB", im.size, BG)).point(lambda v: 255 if v > 30 else 0).getbbox()
     if not box:
         return
     l, t, r, b = box
-    out = Image.new("RGB", (r - l + 2 * pad, b - t + 2 * pad), "white")
+    out = Image.new("RGB", (r - l + 2 * pad, b - t + 2 * pad), BG)
     out.paste(im.crop(box), (pad, pad))
     out.save(path, dpi=(300, 300))
 

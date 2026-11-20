@@ -1,0 +1,22 @@
+origin,item,loans
+2026-09 (allowance),active loans in the risk window (projected),232292
+2026-09 (allowance),"active, first disbursed in 2026-09 (enter the risk set next month; not projected)",354
+2026-09 (allowance),"projected, past the recorded term (projected 12 months)",5047
+2026-09 (allowance),"projected, zero estimated balance",5047
+2026-09 (allowance),"projected, interest rate missing (median rate used)",2790
+2009-12,in the backtest book,214170
+2009-12,open at T but first disbursed in month T (not in the book),2718
+2011-12,in the backtest book,208575
+2011-12,open at T but first disbursed in month T (not in the book),2434
+2013-12,in the backtest book,199027
+2013-12,open at T but first disbursed in month T (not in the book),2750
+2015-12,in the backtest book,199741
+2015-12,open at T but first disbursed in month T (not in the book),3305
+2017-12,in the backtest book,208307
+2017-12,open at T but first disbursed in month T (not in the book),3561
+2019-12,in the backtest book,208585
+2019-12,open at T but first disbursed in month T (not in the book),2897
+2021-12,in the backtest book,205266
+2021-12,open at T but first disbursed in month T (not in the book),2836
+2023-12,in the backtest book,200627
+2023-12,open at T but first disbursed in month T (not in the book),3294

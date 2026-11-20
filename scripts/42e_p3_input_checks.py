@@ -1,4 +1,4 @@
-"""Credit-loss study: two input checks added at review (findings L11 and L12); no model is refitted.
+"""Credit-loss study: two input checks (findings L11 and L12); no model is refitted.
 
 L11  business-age categories by approval fiscal year (the coding changes across eras, and the field is a predictor).
 L12  macro inputs for 2026Q1-Q3: the Fed 2026 files end their history in 2025Q4, so these quarters carry scenario

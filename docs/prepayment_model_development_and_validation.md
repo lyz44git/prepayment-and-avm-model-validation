@@ -1,9 +1,8 @@
 # Mortgage prepayment (turnover + new-lien) competing-risk hazard model
 
-Model development, a self-administered validation and a rate-scenario stress test, structured like an SR 11-7 /
-OCC 2011-12 validation report. The developer and the validator are the same person, so this is not an independent
-validation in the SR 11-7 sense. Every number comes from `scripts/05–09, 16, 17, 21, 22` and the CSVs in
-`reports/p1/`. Figure numbers in this report ("Fig. 1" etc.) refer to `reports/p1/fig*.png`, not to the README figures.
+Model development, validation and a rate-scenario stress test, structured like a validation
+report under the 2011 supervisory guidance (SR 11-7 / OCC 2011-12), since replaced by revised guidance (SR 26-2 /
+OCC Bulletin 2026-13, April 2026). Numbers come from `scripts/04–09, 16, 17, 21, 22, 31–38` and the CSVs in `reports/p1/`. Figure numbers in this report ("Fig. 1" etc.) refer to `reports/p1/fig*.png`, not to the README figures.
 
 ## 1. Purpose and scope
 
@@ -11,8 +10,8 @@ Prepayment is the behavioural input to MBS and whole-loan valuation, balance-she
 In a lifetime credit-loss estimate it sets how long each loan stays on the books, and therefore how many months of
 default risk the allowance covers.
 A mortgage prepays when the home is sold (turnover) or the loan is refinanced, or replaced by a cash-out or
-other new first lien. This project estimates monthly hazards for both channels from 2022-05 to 2025-06, the
-fastest rate rise in 40 years followed by a plateau. It then:
+other new first lien. This project estimates monthly hazards for both channels from 2022-05 to 2025-06, a period of sharply
+rising mortgage rates followed by a plateau. It then:
 - backtests the model out of time and out of state,
 - tests how the owner's rate relative to the market ("lock-in") shifts each hazard,
 - projects 24-month termination rates and pool runoff under rate and house-price scenarios.
@@ -29,11 +28,11 @@ shapes every design choice below.
 
 | Item | Value |
 |---|---|
-| Source | 348.9M rows of linked household, property and lien records (read-only) → 52.9M addresses → **16,060,240 at-risk properties** in 49 states + DC (VT excluded: no 2025-vintage sales) |
+| Source | licensed household, property and lien records (read-only) → **16,060,240 at-risk properties** in 49 states + DC (VT excluded: no 2025-vintage sales); upstream record counts are not exported and are not quoted |
 | Events 2022-05..2025-06 | sale 1,139,050 (7.09%); new first lien without a sale 747,759 (4.66%); other transfer (quitclaim, trustee deed, gift, affidavit) 45,031 (0.28%); none 14,128,400 |
 | Sale rule | 2025-vintage transfer dated in the window, transaction type 1, deed not QC/TD/AF/GF, sale date ≠ old-vintage sale date. 89.1% also show a different owner surname between vintages (name compared inside DuckDB, never extracted) |
 | New-lien rule | no transfer in the window and a Vendor A first lien dated in the window (event month = lien date). Captures rate refinances and cash-out / new first liens; they cannot be told apart |
-| Recording lag | median 0 months, 90th percentile 1 month → window ends at 2025-06, two months before the 2025 vintage's last recordings |
+| Recording lag | window ends at 2025-06, two months before the 2025 vintage's last recordings, to allow for recording lag (the lag of sales was checked in `scripts/04`; the lag of new liens was not measured) |
 | Modelling sample | 4% random sample of properties (hash of the de-identified id): 642,445 properties, **22,885,356 property-months** |
 | Splits (fixed in advance) | train = 41 jurisdictions (40 states + DC) × 2022-05..2024-06 (13.08M rows; 27,707 sales, 16,071 new liens); **OOT** = same states × 2024-07..2025-06 (5.68M rows); **spatial** = 9 hold-out states (MA, NJ, WI, MN, SC, KY, OK, AZ, WA; one per census division) × train months (2.88M); **spatial-OOT** (1.25M) |
 
@@ -53,8 +52,8 @@ shapes every design choice below.
 | Check | Result |
 |---|---|
 | Rate proxy vs Vendor A "recorded" rate, stayers whose lien is the purchase lien (n = 3,941,387) | median spread 0.00 pp, MAE 0.146 pp, corr 0.935; 30-year fixed conventional (n = 2,193,177): MAE 0.027 pp, corr 0.995 |
-| Is Vendor A's rate a recorded note rate? | **No.** It equals PMMS of the lien month for 30-year fixed conventional liens (MAE 0.018 pp, corr 0.996); 68.5% of all rates equal a monthly PMMS value |
-| Stayers who refinanced before 2022 | 6,195,652 (61% of stayers with a lien). For them the purchase-month proxy is off by median −1.69 pp (MAE 2.06 pp). Large measurement error for these owners, so the gap coefficient is expected to be attenuated. "Min PMMS since purchase" is no better (corr 0.00) |
+| Is Vendor A's rate a recorded note rate? | **No.** It equals PMMS of the lien month for 30-year fixed conventional liens (MAE 0.018 pp, corr 0.996) |
+| Stayers who refinanced before 2022 | 6,195,652 (61% of stayers with a lien). For them the purchase-month proxy is off by median −1.69 pp (MAE 2.06 pp). Large measurement error for these owners, so the gap coefficient is expected to be attenuated. "Min PMMS since purchase" has a smaller error for them (MAE 0.79 pp) but no correlation with the vendor rate (0.00), so it does not rank them either; the comparison is against the vendor field, on stayers only |
 | Self-built repeat-sales index vs FHFA (CA) | annual-change correlation 0.88; 5-year 0.95; 2006-07→2012-01 −41.3% vs FHFA −40.9%; 2000→2006 boom understated (+119% vs +145%); the two indices diverge before 1998 |
 | Owner-change confirmation of sales | 89.1% of sale events vs 3.1% of non-events |
 
@@ -64,7 +63,7 @@ shapes every design choice below.
 |---|---|---|
 | M0 | Actuarial lookup | hazard by state × tenure bucket (credibility-weighted toward the national curve) × month-of-year factor |
 | M1 | Cause-specific discrete-time logit hazard | natural cubic spline in tenure, piecewise-linear rate gap (gap+ / gap−), PMMS level and 3-month change, equity, property and tract controls, month-of-year and state FE. Fit on all events + 10% of non-events with the King–Zeng intercept correction; county-clustered SEs; 79 columns |
-| M2 | LightGBM cause-specific hazards | same information plus categorical state; **monotone constraints**: hazard non-increasing in the rate gap (both causes) and in PMMS (new lien); early stopping on the last 6 training months (125 / 96 trees) |
+| M2 | LightGBM cause-specific hazards | same information plus categorical state; **monotone constraints**: hazard non-increasing in the rate gap (both causes) and in PMMS (new lien); early stopping on the last 6 training months |
 
 For states not seen in training, M1 uses the training-share-weighted average state effect rather than the
 reference category. The naive default over-predicted hold-out sales by 27% (predicted/actual 1.271 → 1.025).
@@ -85,7 +84,10 @@ reference category. The naive default over-predicted hold-out sales by 27% (pred
 | New lien | spatial-OOT | 0.534 / **0.582** / 0.578 | 0.77 / 0.64 / 0.73 |
 
 M2's in-sample advantage (0.704 vs 0.650) mostly disappears out of time (0.642 vs 0.639). M2 is
-over-fitting relative to its OOT value, and the parsimonious logit is a defensible champion.
+over-fitting relative to its OOT value, and the parsimonious logit is a defensible champion. Month by month on the
+same rows, LightGBM ranks sales better in all 26 training months (+0.06 AUC on average) but in 9 of 12 out-of-time
+months (+0.003) and 4 of 12 hold-out-state months out of time (−0.001); for new liens, 26 of 26, 8 of 12 and 6 of 12
+(`r6_auc_by_month.csv`).
 
 ### 5.2 Pool-level CPR backtest (train states; `monthly_cpr_backtest_summary.csv`, Fig. 1)
 
@@ -95,7 +97,7 @@ over-fitting relative to its OOT value, and the parsimonious logit is a defensib
 | OOT (12 months) | 3.9% | 3.7 / 3.5 / 3.5 | 0.53 / **0.43** / 0.48 | 0.85 / **0.90** / 0.79 |
 
 New-lien activity is under-predicted in every out-of-time month: predicted ÷ actual is 0.79–0.85 in 2024-07..09,
-then 0.61–0.75 after PMMS averaged 6.2% in 2024-09; the largest pool-CPR miss is 2025-04 (−0.94 pp). New-lien
+then 0.60–0.75 after PMMS averaged 6.2% in 2024-09; the largest pool-CPR miss is 2025-04 (−0.94 pp). New-lien
 activity rose faster than the models' contemporaneous-rate specification allows (finding F2).
 
 ### 5.3 Twelve-month termination forecast, properties at risk on 2024-07-01 (`cum12_backtest.csv`, Fig. 4)
@@ -109,10 +111,12 @@ Every property is rolled forward 12 months from its 2024-07 state along the real
 
 Out of time, observed rates rise in every decile and sit up to 0.7 pp above predicted (largest in the middle
 deciles; logit, `cum12_calibration_oot_m1.csv`). In the hold-out states one decile breaks the ordering and the gap
-reaches about 1.1 pp. Ranking holds better than level.
+reaches about 1.1 pp. Ranking holds better than level. The 448 homes that left through another transfer (quitclaim,
+trustee deed, gift, affidavit) count as "no event" here while the forecast only subtracts sales and new liens;
+removing them changes neither the observed rate (3.90% to 3.91%) nor the AUC (`r6_cum12_third_exit.csv`).
 
 > An earlier version of this backtest summed hazards only over the months each property was observed. That
-> measures exposure length, not risk, and inverted the ranking (AUC ≈ 0.19). It was caught, removed from
+> measures exposure length, not risk, and inverted the ranking. It was caught, removed from
 > `09`, and replaced by `17`. Recorded here as a validation lesson.
 
 ### 5.4 Rate sensitivity: lock-in and refinance incentive (M1, county-clustered SEs)
@@ -144,13 +148,15 @@ Each row of the sensitivity table changes one assumption (`sensitivity_lockin.cs
 - *Sale-side lock-in is not identified in this design.* Its sign flips with the tenure-spline knots. Purchase
   month fixes both tenure and the cohort rate (the age–period–cohort problem), and the 2023-07..2024-06
   sub-period has almost no rate variation (s.e. 0.30).
-- *The large literature lock-in effect* (Fonseca & Liu) is estimated with loan-level note rates; this data does
-  not have them. The finding is reported as a limitation, not hidden.
+- *The large literature lock-in effect.* [Fonseca and Liu (2024)](https://doi.org/10.1111/jofi.13398) estimate it from individual credit records, with each
+  borrower's rate estimated from loan balance, term and payment and with variation in the timing of origination. The
+  proxy here assigns a market rate by purchase cohort, and the sale-side estimate changes sign across specifications.
+  The finding is reported as a limitation, not hidden.
 - *Market-rate level vs turnover.* The market-rate level has a strong negative association with turnover
   (−14% odds per pp). It is identified from 2022–25 time variation and may absorb other macro conditions; it is
   the effect the stress test uses.
 
-**Inference across months (added at review).** The standard errors above cluster by county, but the PMMS level and
+**Inference across months.** The standard errors above cluster by county, but the PMMS level and
 other market terms vary only by month, with about 26 training months. Refitting M1 with two-way (county × month)
 clustered standard errors and a leave-one-month-out jackknife (`scripts/34_p1_inference.py`,
 `r4_inference_twoway.csv`; coefficients and county-clustered errors reproduce the published ones exactly):
@@ -158,8 +164,11 @@ clustered standard errors and a leave-one-month-out jackknife (`scripts/34_p1_in
   identified from differences between purchase cohorts within each month.
 - The PMMS-level standard errors about double under the jackknife (sale ×1.78, new lien ×2.07); both terms stay
   significant (p = 0.0004).
-- The 3-month rate change and the new-lien month-of-year effects are not significant once month-level correlation is
-  allowed for, and the sale-side lock-in stays non-significant under every method.
+- The 3-month rate change is significant with two-way clustering (p = 0.006 for sales, 0.0005 for new liens) but not
+  under the leave-one-month-out jackknife (p = 0.17 and 0.11); with about 26 months the answer depends on the variance
+  estimator, so it is not treated as established. The new-lien month-of-year effects behave the same way, and the
+  sale-side lock-in stays non-significant under every method. Two-way clustering follows [Cameron, Gelbach and Miller
+  (2011)](https://doi.org/10.1198/jbes.2010.07136); the cluster jackknife for logit, [MacKinnon, Nielsen and Webb (2025)](https://doi.org/10.1080/07474938.2025.2515161).
 
 ### 5.5 Replication, stability, monitoring
 
@@ -172,7 +181,9 @@ clustered standard errors and a leave-one-month-out jackknife (`scripts/34_p1_in
   - Sale scores: 0.035 (M1), 0.048 (M2). Stable.
   - **New-lien scores (M1): 0.275**, above the 0.25 action threshold, consistent with finding F2.
   - Inputs: gap 0.038, log appreciation 0.048, estimated LTV 0.059. Tenure 0.31 reflects mechanical ageing of a
-    closed cohort, and the PMMS rate level 4.78 reflects the move to a rate range partly outside training (F10).
+    closed cohort. The PMMS level has PSI 4.78 although every out-of-time monthly rate (6.18–6.96%) lies inside the
+    training range (5.22–7.62%): with only a few distinct monthly values, a shift of months between bins moves PSI a
+    lot, so the figure says the rate mix changed, not that rates left the training range.
 
 ### 5.6 Benchmarks and cash-flow valuation (`ts_benchmark.csv`, Fig. 8; `valuation_risk.csv`, Fig. 7)
 
@@ -180,11 +191,36 @@ clustered standard errors and a leave-one-month-out jackknife (`scripts/34_p1_in
   error (0.42 vs 0.43 pp) but not its shape (logit r = 0.90). The logit rescaled each month by its trailing
   three-month actual ÷ predicted ratio reaches 0.30 pp (r = 0.83); the best rolling one-month-ahead benchmark, ARX(1)
   with PMMS, reaches 0.31 pp (r = 0.64). With a two-month lag in the recalibration (to match recording lag) the error
-  is 0.30 pp (r = 0.85), so the conclusion does not depend on the lag.
+  is 0.30 pp (r = 0.85), so the conclusion does not depend on the lag. Rescaling sales and new liens separately, each by
+  its own trailing ratio at the same two-month lag, gives 0.27 pp out of time and 0.33 pp in the hold-out states, against
+  0.29 and 0.32 for the pool rescaling (`r6_recalibration_by_cause.csv`); the control works the same way either way.
 - **Illustrative cash-flow valuation** (scripts/21). A pass-through pool of 539,120 imputed loans (WAC 4.25%,
   WAM 237 months) discounted at a flat 5.88%: base price 85.7; effective duration 6.80 when prepayment responds to
   rates against 6.21 when it is held fixed (±100 bp), and convexity 36 against 65. At +200 bp the champion and
   challenger prices differ by about one point (74.8 vs 75.7).
+
+### 5.7 An index known at the training cut-off (`scripts/37_p1_asof_index.py`, `r5_asof_index_eval.csv`)
+
+The published panel uses a repeat-sales index estimated once on all states and on sales to 2025-08 (§8). To test
+whether the results lean on that, the panel was rebuilt with the index the valuation study uses: pairs whose second
+sale is on or before 2024-06, hold-out states excluded (they take their census-division index), and frozen after
+2024-06. Nothing after the training cut-off, and nothing from the hold-out states, then enters any feature. M1 and M2
+were refitted with the same design, sample draw and early stopping, and scored on every split.
+
+| Cause, split | Logit AUC, published / as-of | Logit predicted ÷ actual, published / as-of | LightGBM predicted ÷ actual, published / as-of |
+|---|---|---|---|
+| Sale, training months | 0.650 / 0.649 | 0.999 / 0.998 | 0.998 / 0.999 |
+| Sale, out of time | 0.639 / 0.639 | 1.039 / 1.037 | 1.009 / 1.010 |
+| Sale, hold-out states out of time | 0.634 / 0.633 | 1.024 / 1.027 | 0.901 / 1.035 |
+| New lien, out of time | 0.592 / 0.592 | 0.703 / 0.705 | 0.735 / 0.737 |
+| New lien, hold-out states out of time | 0.582 / 0.582 | 0.645 / 0.642 | 0.730 / 0.690 |
+
+- **The champion does not lean on later sales.** Every logit AUC and level moves by 0.003 or less, the new-lien
+  lock-in odds ratio stays at 0.89, the equity coefficients move within a tenth of a standard error, and the
+  out-of-time pool-CPR error is 0.43 points either way (`r5_asof_index_summary.json`).
+- **LightGBM moves more.** Its in-sample new-lien AUC falls from 0.704 to 0.687, so part of its in-sample edge on new
+  liens came from the revised index; its sale AUC is unchanged (0.704 / 0.706), and its hold-out-state calibration
+  shifts in both directions. The champion decision does not change.
 
 ## 6. Stress test (`stress_summary.csv`, `stress_paths.csv`, Fig. 6)
 
@@ -194,8 +230,10 @@ clustered standard errors and a leave-one-month-out jackknife (`scripts/34_p1_in
 - Rates: shocks phased in linearly over 6 months from 6.82% (the 2025-06 PMMS).
 - Two further paths: "realised PMMS" (actual FRED rates 2025-07..2026-10, then flat) and house prices −10% over
   12 months.
-- Count-based rates need no balance assumption. The balance-weighted CPR uses an illustrative pool in which each
-  property carries its purchase-money loan (80% LTV, 30-year, purchase-month PMMS).
+- Count-based rates need no balance assumption. The count-based CPR averages each month's hazard over the starting
+  pool, every home weighted equally, not by its chance of still being in the pool, so it is a rate standardised to the
+  starting composition; the 12- and 24-month termination columns do compound survival. The balance-weighted CPR uses
+  an illustrative pool in which each property carries its purchase-money loan (80% LTV, 30-year, purchase-month PMMS).
 
 | Scenario | 12-month terminations M1 | 24-month terminations M1 | Avg CPR, count, M1 | Δ CPR vs base, M1 / M2 (pp) | Avg CPR, balance-weighted, M1 |
 |---|---|---|---|---|---|
@@ -206,6 +244,11 @@ clustered standard errors and a leave-one-month-out jackknife (`scripts/34_p1_in
 | +100 bp | 2.90% | 5.42% | 2.75% | −0.47 / −0.16 | 2.88% |
 | +200 bp | 2.58% | 4.68% | 2.37% | −0.85 / −0.18 | 2.49% |
 | HPI −10%, rates flat | 3.27% | 6.31% | 3.22% | −0.01 / −0.00 | 3.33% |
+
+The count-based CPR averages each month's hazard over the starting pool. Weighting each home by its probability of
+still being in the pool at the start of the month (the pool's actual run-off rate; `avg_cpr_count_survival_weighted_24m_pct`)
+changes no level by more than 0.02 points and no change against the base by more than 0.01 (−200 bp: +1.24 against
++1.25), because only about 6% of the pool terminates within 24 months.
 
 **Reading the table.**
 - **Asymmetric rate convexity.** The response to rate cuts is larger than to rate rises (−200 bp: +1.25 pp;
@@ -226,7 +269,7 @@ clustered standard errors and a leave-one-month-out jackknife (`scripts/34_p1_in
 | # | Severity | Status | Finding | Remediation |
 |---|---|---|---|---|
 | F1 | High | Open (accepted limitation) | Loan at risk unobserved for event properties; the household record for sold homes is the buyer's | Symmetric pre-window covariates only; property-level termination framed as a prepayment proxy; loan-level data needed for production |
-| F2 | High | **Open** | New-lien hazard under-predicted OOT by 30% (logit) and 26% (LightGBM) (PSI 0.275), in every out-of-time month. Two parts: a gap that pre-dates the rate dip (0.80 in 2024-01..06 for the specification refitted through 2023-12, `remediation/step2_selection_validation.csv`; 0.815 in 2024-07..08 for the published model) and a widening to 0.68 from September 2024 (`r4_f2_by_month.csv`). Recorded new first liens per sale rose from 0.57 to 0.86 while the share of sales with a recorded buyer lien stayed at 0.72–0.73, so a change in lien-recording coverage does not explain it | §9: lagged rate terms were not supported on the validation months, and monthly re-estimation leaves predicted ÷ actual at 0.71. Trailing three-month recalibration (pool-CPR MAE 0.43 → 0.30 pp) is the monitoring control |
+| F2 | High | **Open** | New-lien hazard under-predicted OOT by 30% (logit) and 26% (LightGBM) (PSI 0.275), in every out-of-time month. Two parts: a gap that pre-dates the rate dip (0.80 in 2024-01..06 for the specification refitted through 2023-12, `remediation/step2_selection_validation.csv`; 0.815 in 2024-07..08 for the published model) and a widening to 0.68 from September 2024 (`r4_f2_by_month.csv`). Recorded new first liens per sale rose from 0.57 to 0.86. The share of sales with a buyer lien recorded at any time from the month before the sale stayed at 0.72–0.73; within one month of the sale it rose from 0.62 to 0.70 (`r4_f2_summary.json`). Both are checks on purchase liens and cannot rule out a change in how new liens without a sale are recorded | §9: lagged rate terms were not supported on the validation months, and monthly re-estimation leaves predicted ÷ actual at 0.71. Trailing three-month recalibration (pool-CPR MAE 0.43 → 0.30 pp) is the monitoring control |
 | F3 | Medium | Open | Sale lock-in coefficient not identified (sign flips across tenure specifications) | Do not use it for decisions; needs loan-level note rates or an exogenous rate shifter |
 | F4 | Medium | Open | Rate proxy is attenuated for the 61% of stayers who refinanced before 2022 | Regression-calibration sensitivity reported; loan-level rate history needed |
 | F5 | Medium | Open | M2 monotone constraints impose a lock-in sign the data do not support for sales | Keep M1 as champion; report M2 constrained and unconstrained in future |
@@ -240,12 +283,17 @@ clustered standard errors and a leave-one-month-out jackknife (`scripts/34_p1_in
 
 - Property-level proxy for loan prepayment. No loan balances, so the runoff pool is illustrative.
 - Rate effects are identified from one rising-rate episode.
-- The repeat-sales index is the model's own construction and is estimated partly from window sales. It is used
-  as a realised-macro input (conditional forecast), not as a forecast.
+- The repeat-sales index is the model's own construction, estimated once on all states and all months, hold-out
+  states and out-of-time sales included. Later sales therefore shape the index values behind training features
+  (log appreciation, estimated LTV, indexed purchase price). The outcome labels are held out by date and state, but
+  the index is not. Rebuilt on an index known at the training cut-off, the logit's results are unchanged (§5.7).
 - The new-lien event mixes rate refinances with cash-out and other new first liens. Vendor A lien coverage varies
   by state (state FE absorb the level).
 - Selection: properties enter only if a household in the source records lived there in 2025 (the data's
   construction), so the risk set is not a random sample of all owner-occupied homes.
+- Event definition: each home has one outcome for the whole window, with a transfer taking priority, so an earlier new
+  first lien on a home that later sold is not seen; other transfers leave the risk set and count as no target event in
+  the 12-month backtest. The target is a snapshot-level proxy, not the first event in a full history.
 
 ## 9. Remediation of F9 and F2 (2026-11-18)
 
@@ -325,14 +373,16 @@ trailing recalibration remains a required monitoring step (F2).
 Full citations are in `docs/references.md`.
 
 - **Design.** Prepayment and its competitor are modelled as cause-specific discrete-time hazards, in the
-  competing-risk tradition of Deng, Quigley and Van Order (2000), with an empirical prepayment function as in Schwartz
-  and Torous (1989). The estimator is the logit hazard of Shumway (2001).
-- **Why the refinance forecast fails (F2).** Berger, Milbradt, Tourre and Vavra (2021) show that the prepayment
-  response to a rate cut depends on the distribution of refinancing incentives left by the past rate path, and
-  Andersen, Campbell, Nielsen and Ramadorai (2020) show that households act on an incentive with delays that differ
-  across households. The training months here (2022-05 to 2024-06) contain almost no owners with an incentive, so the
-  model cannot learn the response that the September 2024 dip produced; part of the gap was already present before
-  the dip (§7, `r4_f2_by_month.csv`).
-- **Heterogeneity.** Stanton (1995) and Deng et al. (2000) build borrower heterogeneity into prepayment; ignoring it
+  competing-risk tradition of [Deng, Quigley and Van Order (2000)](https://doi.org/10.1111/1468-0262.00110), with an empirical prepayment function as in [Schwartz
+  and Torous (1989)](https://doi.org/10.1111/j.1540-6261.1989.tb05062.x). The estimator is the logit hazard of [Shumway (2001)](https://doi.org/10.1086/209665).
+- **Why the refinance forecast fails (F2).** [Berger, Milbradt, Tourre and Vavra (2021)](https://doi.org/10.1257/aer.20181857) show that past rates shape the
+  incentives households face when rates fall, and [Andersen, Campbell, Nielsen and Ramadorai (2020)](https://doi.org/10.1257/aer.20180865) show that households
+  differ in how quickly they act on them. The training months do contain owners who look in the money: by the
+  purchase-cohort proxy, 1,146,780 property-months were at least 1 pp below the market rate (`empirical_hazard_by_gap.csv`),
+  but their monthly new-lien rate was only about 5% higher than that of owners near the money (0.138% against 0.132%). The proxy measures the incentive poorly
+  (F4, F8), and the logit already under-predicted new first liens before the September 2024 dip, with the shortfall
+  widening after it (§7, `r4_f2_by_month.csv`). The shortfall therefore cannot be attributed to the rate decline alone;
+  measured incentives, the event definition and borrower differences remain competing explanations.
+- **Heterogeneity.** [Stanton (1995)](https://doi.org/10.1093/rfs/8.3.677) and [Deng et al. (2000)](https://doi.org/10.1111/1468-0262.00110) build borrower heterogeneity into prepayment; ignoring it
   biases prepayment estimates in Deng et al. The model here has none, and the vendor rate field is a market-rate lookup
   rather than the loan's rate (F8), so both the incentive and its heterogeneity are measured poorly.
