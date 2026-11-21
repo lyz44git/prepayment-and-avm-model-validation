@@ -74,7 +74,7 @@ Out-of-time window, 591,687 sales (`vendor_accuracy_oot.csv`). Metrics:
 | B0′ comp index | median of the 20 nearest pre-2022 comps × index |
 | B1 hedonic OLS | log price on property, comp, assessor and index features + state FE |
 | C1 LightGBM | 33 features (no race variables), early stopping on the calibration window (837 trees) |
-| C1q | LightGBM 10%/90% quantile models, split-conformal calibration on 2024-04..06 (conformalized quantile regression, [Romano, Patterson and Candès 2019](https://arxiv.org/abs/1905.03222)) |
+| C1q | LightGBM 10%/90% quantile models, split-conformal calibration on 2024-04..06 (conformalized quantile regression, [Romano, Patterson, and Candès 2019](https://arxiv.org/abs/1905.03222)) |
 | C2 neighbour-attention NN | PyTorch on Apple MPS. 32 comp tokens (indexed price, size, age, beds/baths, condo, dx/dy, distance, comp age, size/age gaps) → 2-layer transformer encoder → subject cross-attention → residual over "comp median × index"; Huber loss; 10 epochs; best calibration MdAPE 11.07% (epoch 9) |
 | C3 blend | equal-weight average of C1 and C2 in log price; weights not tuned, blend added after calibration-window (not test) results |
 
@@ -325,11 +325,11 @@ Full citations are in `docs/references.md`.
   of the realised sale price over all sales; on the same sales, −0.061 and −0.079 on realised-price tiers against −0.010
   and −0.024, not significant, on tiers of a value known before the sale (§9).
   That sensitivity is this study's result, not a claim about the cited paper.
-- **Machine learning in credit.** [Fuster, Goldsmith-Pinkham, Ramadorai and Walther (2022)](https://doi.org/10.1111/jofi.13090) study how more flexible
+- **Machine learning in credit.** [Fuster et al. (2022)](https://doi.org/10.1111/jofi.13090) study how more flexible
   models change who gains from better prediction in mortgage lending; the fairness checks in §4 and §9 are a much
   narrower measurement exercise on valuation errors, by tract, not by borrower.
-- **Methods.** The market index is a repeat-sales index ([Bailey, Muth and Nourse 1963](https://doi.org/10.1080/01621459.1963.10480679)); the intervals are conformalized
-  quantile regression ([Romano, Patterson and Candès 2019](https://arxiv.org/abs/1905.03222)), whose coverage guarantee assumes exchangeable calibration and
+- **Methods.** The market index is a repeat-sales index ([Bailey, Muth, and Nourse 1963](https://doi.org/10.1080/01621459.1963.10480679)); the intervals are conformalized
+  quantile regression ([Romano, Patterson, and Candès 2019](https://arxiv.org/abs/1905.03222)), whose coverage guarantee assumes exchangeable calibration and
   test data, so out of time and out of state only the measured coverage counts; COD and PRD follow the IAAO Standard on
   Ratio Studies, whose thresholds are for property tax assessment, not bank AVM approval.
 - **Model risk.** The structure of this report (vendor due diligence, challengers, outcomes analysis, monitoring and use

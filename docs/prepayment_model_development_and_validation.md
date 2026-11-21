@@ -167,8 +167,8 @@ clustered standard errors and a leave-one-month-out jackknife (`scripts/34_p1_in
 - The 3-month rate change is significant with two-way clustering (p = 0.006 for sales, 0.0005 for new liens) but not
   under the leave-one-month-out jackknife (p = 0.17 and 0.11); with about 26 months the answer depends on the variance
   estimator, so it is not treated as established. The new-lien month-of-year effects behave the same way, and the
-  sale-side lock-in stays non-significant under every method. Two-way clustering follows [Cameron, Gelbach and Miller
-  (2011)](https://doi.org/10.1198/jbes.2010.07136); the cluster jackknife for logit, [MacKinnon, Nielsen and Webb (2025)](https://doi.org/10.1080/07474938.2025.2515161).
+  sale-side lock-in stays non-significant under every method. Two-way clustering follows [Cameron, Gelbach, and Miller
+  (2011)](https://doi.org/10.1198/jbes.2010.07136); the cluster jackknife for logit, [MacKinnon, Nielsen, and Webb (2025)](https://doi.org/10.1080/07474938.2025.2515161).
 
 ### 5.5 Replication, stability, monitoring
 
@@ -373,10 +373,10 @@ trailing recalibration remains a required monitoring step (F2).
 Full citations are in `docs/references.md`.
 
 - **Design.** Prepayment and its competitor are modelled as cause-specific discrete-time hazards, in the
-  competing-risk tradition of [Deng, Quigley and Van Order (2000)](https://doi.org/10.1111/1468-0262.00110), with an empirical prepayment function as in [Schwartz
+  competing-risk tradition of [Deng, Quigley, and Van Order (2000)](https://doi.org/10.1111/1468-0262.00110), with an empirical prepayment function as in [Schwartz
   and Torous (1989)](https://doi.org/10.1111/j.1540-6261.1989.tb05062.x). The estimator is the logit hazard of [Shumway (2001)](https://doi.org/10.1086/209665).
-- **Why the refinance forecast fails (F2).** [Berger, Milbradt, Tourre and Vavra (2021)](https://doi.org/10.1257/aer.20181857) show that past rates shape the
-  incentives households face when rates fall, and [Andersen, Campbell, Nielsen and Ramadorai (2020)](https://doi.org/10.1257/aer.20180865) show that households
+- **Why the refinance forecast fails (F2).** [Berger et al. (2021)](https://doi.org/10.1257/aer.20181857) show that past rates shape the
+  incentives households face when rates fall, and [Andersen et al. (2020)](https://doi.org/10.1257/aer.20180865) show that households
   differ in how quickly they act on them. The training months do contain owners who look in the money: by the
   purchase-cohort proxy, 1,146,780 property-months were at least 1 pp below the market rate (`empirical_hazard_by_gap.csv`),
   but their monthly new-lien rate was only about 5% higher than that of owners near the money (0.138% against 0.132%). The proxy measures the incentive poorly

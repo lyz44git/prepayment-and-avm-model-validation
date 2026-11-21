@@ -515,17 +515,17 @@ produced by the script.
 Full citations are in `docs/references.md`.
 
 - **Estimator.** The charge-off and payoff hazards are cause-specific discrete-time hazards estimated as logits, the
-  approach of [Shumway (2001)](https://doi.org/10.1086/209665) and [Campbell, Hilscher and Szilagyi (2008)](https://doi.org/10.1111/j.1540-6261.2008.01416.x).
-- **Why the level fails out of time.** [Rajan, Seru and Vig (2015)](https://doi.org/10.1016/j.jfineco.2014.09.012) link the failure of a default model to lenders'
+  approach of [Shumway (2001)](https://doi.org/10.1086/209665) and [Campbell, Hilscher, and Szilagyi (2008)](https://doi.org/10.1111/j.1540-6261.2008.01416.x).
+- **Why the level fails out of time.** [Rajan, Seru, and Vig (2015)](https://doi.org/10.1016/j.jfineco.2014.09.012) link the failure of a default model to lenders'
   changing use of soft information after securitization. Here, too, forecasts deteriorate across cohorts (§5, §11),
   but the SBA data do not observe soft information, so they do not identify why the cohorts changed. [Demyanyk and Van
   Hemert (2011)](https://doi.org/10.1093/rfs/hhp033) document vintage effects in loan quality after controlling for observables; the approval-era effects
   here are a conditional analogue.
-- **What observables miss.** [Das, Duffie, Kapadia and Saita (2007)](https://doi.org/10.1111/j.1540-6261.2007.01202.x) find default clustering beyond a model with
-  observable intensities, and [Duffie, Eckner, Horel and Saita (2009)](https://doi.org/10.1111/j.1540-6261.2009.01495.x) model it with a common frailty factor. The SBA
+- **What observables miss.** [Das et al. (2007)](https://doi.org/10.1111/j.1540-6261.2007.01202.x) find default clustering beyond a model with
+  observable intensities, and [Duffie et al. (2009)](https://doi.org/10.1111/j.1540-6261.2009.01495.x) model it with a common frailty factor. The SBA
   write-offs also cluster (§2), but administrative batching and a common shock to borrowers would both produce that,
   and these records cannot separate the two; no frailty term is estimated here.
-- **Machine learning.** [Fuster, Goldsmith-Pinkham, Ramadorai and Walther (2022)](https://doi.org/10.1111/jofi.13090) study machine-learning default models
+- **Machine learning.** [Fuster et al. (2022)](https://doi.org/10.1111/jofi.13090) study machine-learning default models
   in mortgage lending. Here LightGBM ranks better than the logit but is no better calibrated out of time (§4), so it
   does not address the level failure.
 - **Policy regimes.** The 2020–21 payment relief broke the estimated link between unemployment and write-offs (§7),

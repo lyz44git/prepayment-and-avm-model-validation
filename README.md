@@ -87,12 +87,12 @@ studies are logged as findings and fixed (L15, L16, V10).
 | Evaluation design: the test, not the model, produces the result | Price tiers sorted on the realised price; an unseen-state comparison that mixed vendor vintages; overlapping backtest origins | Change only the test: same homes with different tiers, same dates in both comparisons | Fixed by redesigning the test, as the reports do where they can |
 | Specification: the model is wrong about something the data could show | Cohort quality absorbed by the macro term (also regime change); no frailty or borrower heterogeneity | Add the term and re-test out of time | Partly: approval-era effects halve the unemployment coefficient and cut the error by a third to a half |
 
-**Each cause has precedents.** [Rajan, Seru and Vig (2015)](https://doi.org/10.1016/j.jfineco.2014.09.012) show a default model failing after a change in how lenders used soft
+**Each cause has precedents.** [Rajan, Seru, and Vig (2015)](https://doi.org/10.1016/j.jfineco.2014.09.012) show a default model failing after a change in how lenders used soft
 information; the SBA forecasts also deteriorate across cohorts, though these data cannot say why the cohorts changed.
 [Demyanyk and Van Hemert (2011)](https://doi.org/10.1093/rfs/hhp033) document vintage effects in loan quality; the approval-era effects here are a
-conditional analogue. [Das, Duffie, Kapadia and Saita (2007)](https://doi.org/10.1111/j.1540-6261.2007.01202.x) and [Duffie, Eckner, Horel and Saita (2009)](https://doi.org/10.1111/j.1540-6261.2009.01495.x) find default
+conditional analogue. [Das et al. (2007)](https://doi.org/10.1111/j.1540-6261.2007.01202.x) and [Duffie et al. (2009)](https://doi.org/10.1111/j.1540-6261.2009.01495.x) find default
 clustering beyond observable covariates; the SBA write-offs also cluster, but batched posting and a common shock to
-borrowers cannot be separated in these records. [Berger, Milbradt, Tourre and Vavra (2021)](https://doi.org/10.1257/aer.20181857) show that the past rate path
+borrowers cannot be separated in these records. [Berger et al. (2021)](https://doi.org/10.1257/aer.20181857) show that the past rate path
 shapes the response to a rate cut, one candidate reading of the mortgage results. Full references:
 [docs/references.md](docs/references.md).
 
@@ -150,8 +150,8 @@ underwriting quality, and the era cut-points were set after seeing this table
 ([report, §5](docs/credit_loss_cecl_validation.md#5-did-the-loans-change-vintage-not-only-the-economy)).
 
 **Model form.** The champion is a cause-specific discrete-time hazard estimated as a logit, as in [Shumway (2001)](https://doi.org/10.1086/209665)
-and [Campbell, Hilscher and Szilagyi (2008)](https://doi.org/10.1111/j.1540-6261.2008.01416.x), on a case-control sample with the intercept correction of [King and Zeng
-(2001)](https://doi.org/10.1093/oxfordjournals.pan.a004868). Machine learning improves default prediction in [Fuster, Goldsmith-Pinkham, Ramadorai and Walther (2022)](https://doi.org/10.1111/jofi.13090); here
+and [Campbell, Hilscher, and Szilagyi (2008)](https://doi.org/10.1111/j.1540-6261.2008.01416.x), on a case-control sample with the intercept correction of [King and Zeng
+(2001)](https://doi.org/10.1093/oxfordjournals.pan.a004868). Machine learning improves default prediction in [Fuster et al. (2022)](https://doi.org/10.1111/jofi.13090); here
 LightGBM ranks better but is no better calibrated out of time, so it does not fix the level.
 
 <sub><b>Methods.</b> SBA 7(a) term loans as of 2026-09-30: 919,479 loans and 52,141,481 loan-months at risk in 2006-01 to 2026-09. Cause-specific discrete-time hazards for charge-off and payoff on all events and 5% of other months, intercept corrected; fit 2006–2017, validation 2018–2019, out of time 2020-01 to 2026-09; nine hold-out states. Plan hashed before fitting; six documented deviations (<a href="docs/credit_loss_deviations.md">deviations</a>).</sub>
@@ -263,11 +263,9 @@ as wide.
 **Why new liens were missed.** The training months were not empty of refinancing incentives: by the purchase-cohort
 rate proxy, 1.15 million training property-months were at least a point in the money, yet they took new first liens
 only about 5% faster than owners near the money (0.138% against 0.132% a month). The proxy assigns each home the market rate of its purchase month, which is wrong
-for the 61% of owners with a lien who refinanced before 2022, so it measures the incentive poorly. [Berger, Milbradt, Tourre and
-Vavra (2021)](https://doi.org/10.1257/aer.20181857) show that the past rate path shapes the response to a rate cut, and [Andersen, Campbell, Nielsen and
-Ramadorai (2020)](https://doi.org/10.1257/aer.20180865) that households differ in how quickly they act; both are candidate explanations, as is the event
+for the 61% of owners with a lien who refinanced before 2022, so it measures the incentive poorly. [Berger et al. (2021)](https://doi.org/10.1257/aer.20181857) show that the past rate path shapes the response to a rate cut, and [Andersen et al. (2020)](https://doi.org/10.1257/aer.20180865) that households differ in how quickly they act; both are candidate explanations, as is the event
 definition, and a shortfall that began before the rate dip cannot be attributed to the dip alone. The design follows
-the competing-risk tradition of [Deng, Quigley and Van Order (2000)](https://doi.org/10.1111/1468-0262.00110) and the empirical prepayment function of [Schwartz
+the competing-risk tradition of [Deng, Quigley, and Van Order (2000)](https://doi.org/10.1111/1468-0262.00110) and the empirical prepayment function of [Schwartz
 and Torous (1989)](https://doi.org/10.1111/j.1540-6261.1989.tb05062.x), without the borrower heterogeneity of [Stanton (1995)](https://doi.org/10.1093/rfs/8.3.677); loan-level rates would be needed to close
 finding F2.
 

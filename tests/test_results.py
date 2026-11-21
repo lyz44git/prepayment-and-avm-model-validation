@@ -260,9 +260,9 @@ def test_every_cited_work_is_in_the_reference_list():
     refs = (root / "docs" / "references.md").read_text()
     text = "\n".join(f.read_text() for f in [root / "README.md"] + sorted((root / "docs").glob("*.md")) if f.name != "references.md")
     for surname, year in CITED:
-        assert re.search(r"\*\*" + re.escape(surname) + r"[^\n]*\(" + str(year) + r"\)", refs), (surname, year, "missing from references")
+        assert re.search(r"^- " + re.escape(surname) + r"[^\n]*\. " + str(year) + r"\. ", refs, flags=re.M), (surname, year, "missing from references")
         assert re.search(re.escape(surname) + r"[^()]{0,80}\(?" + str(year), text), (surname, year, "not cited")
-    entries = re.findall(r"^- \*\*([^*]+)\*\*", refs, flags=re.M)
+    entries = re.findall(r"^- (\S.*)$", refs, flags=re.M)
     assert len(entries) == len(CITED) + 6  # plus IAAO, SR 11-7, SR 26-2, the FASB update, the ACL policy statement, the Fed scenarios
     assert "SR 26-2" in refs and "supersede" in refs.lower()
 
