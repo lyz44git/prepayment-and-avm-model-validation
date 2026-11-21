@@ -244,7 +244,7 @@ def p_nl_month(ax, letter, title):
     w = csv(REM + "step4_walkforward_by_month.csv")
     w = w[(w.spec == "S1") & (w.split == "oot") & (w.cause == "new_lien")].copy(); w["month"] = pd.to_datetime(w.month)
     ax.axhspan(0.9, 1.1, color=PALE, alpha=0.7, lw=0, zorder=0); ax.axhline(1, color=MUTED, lw=0.8)
-    ax.text(w.month.iloc[-1], 1.05, "closure band 0.90–1.10", color=MUTED, fontsize=7.2, ha="right", va="center")
+    ax.text(w.month.iloc[-1], 1.05, "closure range, pooled re-estimate: 0.90–1.10", color=MUTED, fontsize=7.2, ha="right", va="center")
     ax.plot(w.month, w.fixed_origin / w.actual_hazard, color=GREY, lw=1.8, ls=(0, (4, 3)), marker="o", ms=3.5, mec=BG, zorder=3)
     ax.plot(w.month, w.walk_forward / w.actual_hazard, color=BLUE, lw=2.2, marker="o", ms=4.5, mec=BG, mew=1, zorder=4)
     ax.axvline(DIP, color=ORANGE, lw=1, ls=(0, (2, 2)))
@@ -357,7 +357,7 @@ def p_bt_overview(ax, letter, title):
     ax.text(len(org) - 0.35, 1.27, "±25%", fontsize=7, color=MUTED, va="bottom", ha="right")
     ax.set_xticks(x, [o[:4] for o in org]); ax.set_xlim(-0.4, len(org) - 0.3)
     ax.set_xlabel("Forecast origin (December)"); ax.set_ylabel("24-month charge-off $: predicted ÷ actual"); clean(ax)
-    legend(ax, [("Logit (champion), first backtest", NAVY, "dot"), ("Logit + approval eras, no overlay", BLUE, "dot")],
+    legend(ax, [("Champion logit", NAVY, "dot"), ("+ approval eras, no overlay", BLUE, "dot")],
            loc="upper left", fontsize=7)
     panel(ax, letter, title)
 
@@ -570,10 +570,16 @@ def p_allowance2(ax, letter, title):
         y = len(order) - 1 - i
         bse, sev = 100 * src[("baseline", k)], 100 * src[("severe", k)]
         pill(ax, 0, 11, y, PALE, lw=7, z=1, alpha=0.6); pill(ax, bse, sev, y, OSOFT, lw=7, z=2)
-        dot(ax, bse, y, NAVY, s=58, z=5); dot(ax, sev, y, ORANGE, s=58, z=4)
-        ax.text(min(bse, sev) - 0.25, y, f"{bse:.1f}%", ha="right", va="center", fontsize=7.6, fontweight="bold", color=INK)
-        if round(sev, 1) != round(bse, 1):          # severe can sit below baseline under the reversion of §9 (R2b)
-            ax.text(max(bse, sev) + 0.25, y, f"{sev:.1f}%", ha="left", va="center", fontsize=7.6, fontweight="bold", color=ORANGE)
+        db = ds = 0.0
+        if 0.005 < abs(sev - bse) < 0.25:           # nearly coincident points: offset them vertically so both show
+            db, ds = 0.14, -0.14
+        dot(ax, bse, y + db, NAVY, s=58, z=5); dot(ax, sev, y + ds, ORANGE, s=58, z=4)
+        left = sev < bse                             # severe can sit below baseline under the reversion of §9 (R2b)
+        ax.text(bse + (0.25 if left else -0.25), y + db, f"{bse:.1f}%", ha="left" if left else "right", va="center",
+                fontsize=7.6, fontweight="bold", color=INK)
+        if round(sev, 1) != round(bse, 1):
+            ax.text(sev + (-0.25 if left else 0.25), y + ds, f"{sev:.1f}%", ha="right" if left else "left", va="center",
+                    fontsize=7.6, fontweight="bold", color=ORANGE)
         if (k, lab) in ALT:                          # one assumption about recent cohorts, baseline (report §9 sensitivities)
             alt, note = ALT[(k, lab)]
             ax.plot([bse, alt], [y - 0.36, y - 0.36], color=MUTED, lw=0.8, zorder=2)
@@ -687,7 +693,7 @@ def figure0():
                     shrinkA=0, shrinkB=0))   # each input feeds the estimate: one straight arrow per card
     rbox(ax, 0.3, 0.2, 29.1, 2.0, NAVY, r=0.3)
     ax.text(15, 1.58, "Lifetime loss estimate", ha="center", va="center", fontsize=9, fontweight="bold", color=ONPILL)
-    ax.text(15, 0.78, "Each input held up on one check and missed on another; only checks against outcomes caught the misses.",
+    ax.text(15, 0.78, "Each input held up on one check and missed on another; checks against outcomes showed how large the misses were.",
             ha="center", va="center", fontsize=7.3, color=ONPILL)
     save(fig, "figures/figure0.png")
 

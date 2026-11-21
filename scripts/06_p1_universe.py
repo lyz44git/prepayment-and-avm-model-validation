@@ -9,13 +9,19 @@ from _paths import WORK, REPORTS, duck
 from mval.sql import RES_SQL, arms_old, ym_to_idx
 con = duck()
 W0, W1 = 20220501, 20250701           # risk window [2022-05, 2025-06]
+# True reproduces the published panel: a home whose 2025-vintage sale date is missing fails the "transferred just
+# before the window" test below (NULL), so it is dropped (3,497 of 16,142,418 otherwise eligible homes, 188 of them
+# with a new first lien in the window). False keeps those homes, as the new-lien rule intends.
+LEGACY_NULL_SALE_DATE = True
+PRE_WINDOW = "sd1 >= 20220101 AND sd1 < {W0} AND sd1 <> sd0".format(W0=W0)
+PRE_WINDOW_SQL = f"NOT ({PRE_WINDOW})" if LEGACY_NULL_SALE_DATE else f"NOT COALESCE({PRE_WINDOW}, FALSE)"
 q = f"""
 COPY (
 WITH base AS (
   SELECT *, {ym_to_idx('sd0')} AS t_purchase FROM read_parquet('{WORK}/props/*.parquet')
   WHERE in_vc_old AND in_vc_new AND same_prop_id AND {RES_SQL} AND ownocc0 = 'O' AND corp0 IS NULL
     AND {arms_old()} AND sd0 >= 19900101 AND sd0 < {W0} AND (sd0 % 100) > 0 AND state <> 'VT'
-    AND NOT (sd1 >= 20220101 AND sd1 < {W0} AND sd1 <> sd0)     -- transferred just before the window: ambiguous
+    AND {PRE_WINDOW_SQL}     -- transferred just before the window: ambiguous
     AND NOT (sd1 IS NOT NULL AND sd1 < sd0)                     -- inconsistent vintages
 ),
 ev AS (

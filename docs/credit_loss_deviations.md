@@ -142,8 +142,8 @@ Lifetime-to-date predicted ÷ actual dollars by origin (`r3_lifetime_backtest.cs
 | 2019-12 | 3.14 | 2.24 | 1.03 | 0.94 | 1.09 |
 
 From the 2015 origin on, when the fit covers the crisis and the recovery, all three remediated candidates are within
-±25% at every origin; fitted on four to eight years (2009–2013 origins), the logits under-predict in 11 of 12
-model-origin pairs (R2b at 2009 is the exception). **Validator's
+±25% at every origin; fitted on four to eight years (2009–2013 origins), the logits under-predict in all 12
+model-origin pairs, 11 of them by more than 30%. **Validator's
 recommendation (outside the pre-set adoption rule, labelled as such):** use M1v with O1 for the lifetime allowance
 only when it is fitted on at least one full credit cycle, report the range across M1v, R2a and R2b, and do not use it
 for 24-month or quarterly charge-off forecasts. The vintage finding stays open.

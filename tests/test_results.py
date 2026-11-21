@@ -345,6 +345,10 @@ def test_prepayment_and_valuation_sensitivities():
     assert cens.other_transfers_removed == 448 and round(pub.actual_rate_pct, 2) == 3.90 and round(cens.actual_rate_pct, 2) == 3.91
     assert round(pub.auc_12m, 3) == round(cens.auc_12m, 3)
     r = pd.read_csv(P1 / "r6_recalibration_by_cause.csv").set_index(["split", "model", "forecast"]).MAE_monthly_cpr_pp
+    q = pd.read_csv(P1 / "r6_recalibration_by_cause.csv").set_index(["split", "model", "forecast"])
+    pool, own = q.loc[("oot", "m1", "pool recalibration (t-2..t-4)")], q.loc[("oot", "m1", "recalibration by cause (t-2..t-4)")]
+    assert (round(pool.pred_over_actual_sale, 2), round(pool.pred_over_actual_new_lien, 2)) == (1.16, 0.78)   # README use limits
+    assert (round(own.pred_over_actual_sale, 2), round(own.pred_over_actual_new_lien, 2)) == (1.04, 0.92)
     assert round(r[("oot", "m1", "recalibration by cause (t-2..t-4)")], 2) == 0.27 and round(r[("oot", "m1", "pool recalibration (t-2..t-4)")], 2) == 0.29
     assert round(r[("spatial_oot", "m1", "recalibration by cause (t-2..t-4)")], 2) == 0.33 and round(r[("spatial_oot", "m1", "pool recalibration (t-2..t-4)")], 2) == 0.32
     q = pd.read_csv(P2 / "r6_conformal_exact_rank.csv")

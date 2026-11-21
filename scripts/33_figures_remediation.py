@@ -13,7 +13,7 @@ a.plot(x, m[m.model == "S0 fixed"].cpr_p * 100, color=S[1], ls="--", label="Logi
 a.plot(x, m[m.model == "S1 walk-forward"].cpr_p * 100, color=S[0], label="Logit S1, re-estimated each month")
 a.plot(pd.to_datetime(ts.month), ts["hazard: logit + rolling 3-month recalibration | rolling 1-month-ahead"], color=S[2],
        label="Logit + trailing 3-month recalibration")
-a.set_ylabel("Pool CPR (%)"); a.set_title("a  Re-estimation does not fix the refinance shortfall"); a.legend(loc="upper left", fontsize=7.8)
+a.set_ylabel("Pool CPR (%)"); a.set_title("a  Re-estimation does not fix the pool shortfall"); a.legend(loc="upper left", fontsize=7.8)
 st = pd.read_csv(R / "step5_stress_summary.csv")
 sc = ["HPI -20% (rates flat)", "HPI -10% (rates flat)", "HPI +10% (rates flat)"]; lab = ["House prices −20%", "−10%", "+10%"]
 b = ax[1]; y = np.arange(len(sc)); w = 0.36

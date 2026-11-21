@@ -76,10 +76,15 @@ for sp in ["oot", "spatial_oot"]:
         pool = cpr_from_smm((full[f"{m}_sale"] + full[f"{m}_new_lien"]) * pool_ratio)
         bycause = cpr_from_smm(scale("y_sale", f"{m}_sale") + scale("y_new_lien", f"{m}_new_lien"))
         o = (full.split == sp).to_numpy()
+        own = {c: full[f"{m}_{c}"] * (full[f"y_{c}"].shift(2) + full[f"y_{c}"].shift(3) + full[f"y_{c}"].shift(4)) /
+                  (full[f"{m}_{c}"].shift(2) + full[f"{m}_{c}"].shift(3) + full[f"{m}_{c}"].shift(4)) for c in ("sale", "new_lien")}
+        by_cause = {"fixed": {c: full[f"{m}_{c}"] for c in own}, "pool recalibration (t-2..t-4)": {c: full[f"{m}_{c}"] * pool_ratio for c in own},
+                    "recalibration by cause (t-2..t-4)": own}       # each exit's predicted / recorded count after the rescaling
         for name, pr in (("fixed", raw), ("pool recalibration (t-2..t-4)", pool), ("recalibration by cause (t-2..t-4)", bycause)):
             pr = np.asarray(pr, float)[o]; yy = np.asarray(y, float)[o]
+            ratios = {f"pred_over_actual_{c}": float(np.asarray(by_cause[name][c], float)[o].sum() / full[f"y_{c}"].to_numpy()[o].sum()) for c in own}
             rc.append({"split": sp, "model": m, "forecast": name, "months": int(o.sum()),
-                       "MAE_monthly_cpr_pp": float(np.abs(pr - yy).mean() * 100), "corr": float(np.corrcoef(pr, yy)[0, 1])})
+                       "MAE_monthly_cpr_pp": float(np.abs(pr - yy).mean() * 100), "corr": float(np.corrcoef(pr, yy)[0, 1]), **ratios})
 rc = pd.DataFrame(rc); rc.to_csv(OUT / "r6_recalibration_by_cause.csv", index=False); print(rc.round(4).to_string(index=False))
 
 # ---------------------------------------------------------------- 3. paired ranking by month

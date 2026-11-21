@@ -52,7 +52,7 @@ Out-of-time window, 591,687 sales (`vendor_accuracy_oot.csv`). Metrics:
    **≈ 2020-08**. The vendor-stated AVM error has no ranking
    power for realised error: Spearman 0.045, AUC 0.498 for |error| > 20%, n = 455,397.
 2. **The Vendor B "estimated home value" is anchored to the recorded sale price, i.e. look-ahead.**
-   - 29.5% of OOT sales match within 0.5%.
+   - 29.5% of the 542,580 out-of-time sales it covers match within 0.5%.
    - The median ratio is exactly 1.000 in every quarter through 2024Q3, with median error under 0.3%; in 2024Q3,
      52.5% of its values are within 0.5% of the sale price (`vendor_accuracy_by_quarter.csv`). It drifts away for sales
      from 2024Q4 onward (median error 6.4%, then 15% in 2025Q1).
@@ -74,7 +74,7 @@ Out-of-time window, 591,687 sales (`vendor_accuracy_oot.csv`). Metrics:
 | B0′ comp index | median of the 20 nearest pre-2022 comps × index |
 | B1 hedonic OLS | log price on property, comp, assessor and index features + state FE |
 | C1 LightGBM | 33 features (no race variables), early stopping on the calibration window (837 trees) |
-| C1q | LightGBM 10%/90% quantile models, split-conformal calibration on 2024-04..06 (conformalized quantile regression, [Romano, Patterson, and Candès 2019](https://arxiv.org/abs/1905.03222)) |
+| C1q | LightGBM 10%/90% quantile models, split-conformal calibration on 2024-04..06 (conformalized quantile regression, [Romano, Patterson, and Candès 2019](https://proceedings.neurips.cc/paper/2019/hash/5103c3584b063c431bd1268e9b5e76fb-Abstract.html)) |
 | C2 neighbour-attention NN | PyTorch on Apple MPS. 32 comp tokens (indexed price, size, age, beds/baths, condo, dx/dy, distance, comp age, size/age gaps) → 2-layer transformer encoder → subject cross-attention → residual over "comp median × index"; Huber loss; 10 epochs; best calibration MdAPE 11.07% (epoch 9) |
 | C3 blend | equal-weight average of C1 and C2 in log price; weights not tuned, blend added after calibration-window (not test) results |
 
@@ -145,8 +145,9 @@ exact split-conformal rank ceil((n + 1) × 0.8) instead of an interpolated quant
 - $1M+ screen: C1 AUC 0.954 vs Vendor A market value 0.947. Recall 72.9% vs 67.4% at precision 88.5% vs 90.7%.
   The ranking gain is small; the recall gain comes with lower precision.
 
-**Disparity audit.** Tract Black + Hispanic share quintiles, computed within price decile so that tier
-regressivity is removed:
+**Disparity audit.** Quintiles of tract Black + Hispanic share are formed across all out-of-time sales (tracts without
+a share are set to zero, so they fall in the lowest quintile) and then crossed with within-state price deciles, so that
+tier regressivity is removed. Values are log points × 100; −9.1 log points is about −8.7%:
 
 | Estimator | Within-tier value/price, Q5 − Q1 (log points × 100) |
 |---|---|
@@ -216,8 +217,8 @@ decision, so this is not a fair-lending test.
 
 The scoring service's own PSI code was run on each out-of-time month against the training-window reference
 (`scripts/23_p2_service_reference.py`; `psi_backfill_summary.csv`). Six inputs that shift by design are excluded from
-the alarm (sale month, market index level, months since the prior sale, state code, latitude, longitude); their PSI is
-5.9–9.6 in every month. The first row is the calibration window, the baseline for the outcome trigger
+the alarm (sale month, market index level, months since the prior sale, state code, latitude, longitude); the largest of
+their PSIs is 5.9–9.6 in every batch, including the calibration window. The first row is the calibration window, the baseline for the outcome trigger
 (`r4_monitoring_backtest.csv`).
 
 | Month | Prediction PSI | Max PSI, stable inputs | Median error, LightGBM | Median error, blend |
@@ -275,8 +276,9 @@ below zero; the first 200 draws reproduce the published interval.
 
 **Unseen states by period.** The all-month tie in the nine hold-out states (12.2% against 12.0%) hides two periods
 (`r4_accuracy_spatial_oot.csv`). In 2022-05..2024-06, when the vendor's ~2022 values were current, Vendor A market value
-is more accurate (9.3% against 11.9%). In the out-of-time months the blend is (12.8% against 18.5%; on rows with both
-vendor fields, −6.1 points, 95% CI −7.8 to −4.2). Transfer to new geography is therefore not shown to fail; the
+has the lower error on its own coverage (9.3% against 11.9%); on rows with both vendor fields the blend minus vendor
+difference is +2.4 points, 95% CI −0.01 to +4.43, so the vendor is at least as good. In the out-of-time months the blend
+is more accurate (12.8% against 18.5%; on rows with both vendor fields, −6.1 points, 95% CI −7.8 to −4.2). Transfer to new geography is therefore not shown to fail; the
 comparison is confounded with the vendor's value date.
 
 **Price tiers known before the sale.** The tier tables above sort on the realised price. Rebuilt on within-state
@@ -301,7 +303,7 @@ extreme bottom-decile error are not robust findings (V7, V8).
 **The pipeline re-run on the states that pass the price-disclosure screen** (`scripts/29_p2_screened_rerun.sh`,
 `r6_screened_*`). With each state's share of priced resales computed over all resales (§5), 12 states fail and the
 sample falls to 1,971,173 sales in 38 jurisdictions; every step from the sample to the bootstrap and the monitoring
-back-test was re-run without them.
+back-test was re-run without them, with the house-price index kept as published.
 
 | Result | Published (all states) | Re-run (states that pass) |
 |---|---|---|
@@ -329,7 +331,7 @@ Full citations are in `docs/references.md`.
   models change who gains from better prediction in mortgage lending; the fairness checks in §4 and §9 are a much
   narrower measurement exercise on valuation errors, by tract, not by borrower.
 - **Methods.** The market index is a repeat-sales index ([Bailey, Muth, and Nourse 1963](https://doi.org/10.1080/01621459.1963.10480679)); the intervals are conformalized
-  quantile regression ([Romano, Patterson, and Candès 2019](https://arxiv.org/abs/1905.03222)), whose coverage guarantee assumes exchangeable calibration and
+  quantile regression ([Romano, Patterson, and Candès 2019](https://proceedings.neurips.cc/paper/2019/hash/5103c3584b063c431bd1268e9b5e76fb-Abstract.html)), whose coverage guarantee assumes exchangeable calibration and
   test data, so out of time and out of state only the measured coverage counts; COD and PRD follow the IAAO Standard on
   Ratio Studies, whose thresholds are for property tax assessment, not bank AVM approval.
 - **Model risk.** The structure of this report (vendor due diligence, challengers, outcomes analysis, monitoring and use

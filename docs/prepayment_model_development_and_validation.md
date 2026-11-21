@@ -33,7 +33,7 @@ shapes every design choice below.
 | Sale rule | 2025-vintage transfer dated in the window, transaction type 1, deed not QC/TD/AF/GF, sale date ≠ old-vintage sale date. 89.1% also show a different owner surname between vintages (name compared inside DuckDB, never extracted) |
 | New-lien rule | no transfer in the window and a Vendor A first lien dated in the window (event month = lien date). Captures rate refinances and cash-out / new first liens; they cannot be told apart |
 | Recording lag | window ends at 2025-06, two months before the 2025 vintage's last recordings, to allow for recording lag (the lag of sales was checked in `scripts/04`; the lag of new liens was not measured) |
-| Modelling sample | 4% random sample of properties (hash of the de-identified id): 642,445 properties, **22,885,356 property-months** |
+| Modelling sample | 4% random sample of properties (hash of the de-identified id): 642,445 properties, **22,885,356 property-months**. The eligibility filter also drops homes whose 2025-vintage sale date is missing: 3,497 of 16,142,418 otherwise eligible homes (0.02%), 188 of them with a new first lien in the window. `scripts/06` keeps them with LEGACY_NULL_SALE_DATE = False; the published tables use the original rule |
 | Splits (fixed in advance) | train = 41 jurisdictions (40 states + DC) × 2022-05..2024-06 (13.08M rows; 27,707 sales, 16,071 new liens); **OOT** = same states × 2024-07..2025-06 (5.68M rows); **spatial** = 9 hold-out states (MA, NJ, WI, MN, SC, KY, OK, AZ, WA; one per census division) × train months (2.88M); **spatial-OOT** (1.25M) |
 
 **Covariates (all symmetric between event and non-event properties).**
@@ -125,7 +125,7 @@ removing them changes neither the observed rate (3.90% to 3.91%) nor the AUC (`r
 |---|---|---|
 | Rate gap above 0 (owner's rate below market), per +1 pp | OR 1.020 (0.991–1.049), n.s. | **OR 0.892 (0.859–0.928)** |
 | Rate gap below 0 (owner in the money), per +1 pp | coef 0.048 (s.e. 0.022) | coef −0.010 (s.e. 0.024), n.s. |
-| PMMS level, per +1 pp (owner's rate held fixed) | coef −0.149 (z −7.2) | coef −0.225 (z −8.5) |
+| PMMS level, per +1 pp (rate gap and 3-month change held fixed) | coef −0.149 (z −7.2) | coef −0.225 (z −8.5) |
 | Estimated LTV | −0.15 (n.s.) | **−2.99 (z −6.1)**: less equity → fewer new liens |
 | Average marginal effect of +1 pp gap | M1 +2.2%, M2 −1.0% (constraint-imposed) | M1 **−9.3%**, M2 −4.5% |
 
@@ -167,7 +167,8 @@ clustered standard errors and a leave-one-month-out jackknife (`scripts/34_p1_in
 - The 3-month rate change is significant with two-way clustering (p = 0.006 for sales, 0.0005 for new liens) but not
   under the leave-one-month-out jackknife (p = 0.17 and 0.11); with about 26 months the answer depends on the variance
   estimator, so it is not treated as established. The new-lien month-of-year effects behave the same way, and the
-  sale-side lock-in stays non-significant under every method. Two-way clustering follows [Cameron, Gelbach, and Miller
+  sale-side lock-in is significant only with month-only clustering (p = 0.048; county, two-way and jackknife p = 0.18,
+  0.068 and 0.067). Two-way clustering follows [Cameron, Gelbach, and Miller
   (2011)](https://doi.org/10.1198/jbes.2010.07136); the cluster jackknife for logit, [MacKinnon, Nielsen, and Webb (2025)](https://doi.org/10.1080/07474938.2025.2515161).
 
 ### 5.5 Replication, stability, monitoring
@@ -193,7 +194,9 @@ clustered standard errors and a leave-one-month-out jackknife (`scripts/34_p1_in
   with PMMS, reaches 0.31 pp (r = 0.64). With a two-month lag in the recalibration (to match recording lag) the error
   is 0.30 pp (r = 0.85), so the conclusion does not depend on the lag. Rescaling sales and new liens separately, each by
   its own trailing ratio at the same two-month lag, gives 0.27 pp out of time and 0.33 pp in the hold-out states, against
-  0.29 and 0.32 for the pool rescaling (`r6_recalibration_by_cause.csv`); the control works the same way either way.
+  0.29 and 0.32 for the pool rescaling (`r6_recalibration_by_cause.csv`). The pool rescaling fixes the combined rate, not the split:
+  out of time it leaves 1.16 predicted sales and 0.78 new liens per recorded one, against 1.04 and 0.92 when each exit
+  is rescaled by its own ratio, so a forecast of new liens alone is not supported (F2 stays open).
 - **Illustrative cash-flow valuation** (scripts/21). A pass-through pool of 539,120 imputed loans (WAC 4.25%,
   WAM 237 months) discounted at a flat 5.88%: base price 85.7; effective duration 6.80 when prepayment responds to
   rates against 6.21 when it is held fixed (±100 bp), and convexity 36 against 65. At +200 bp the champion and
@@ -204,7 +207,7 @@ clustered standard errors and a leave-one-month-out jackknife (`scripts/34_p1_in
 The published panel uses a repeat-sales index estimated once on all states and on sales to 2025-08 (§8). To test
 whether the results lean on that, the panel was rebuilt with the index the valuation study uses: pairs whose second
 sale is on or before 2024-06, hold-out states excluded (they take their census-division index), and frozen after
-2024-06. Nothing after the training cut-off, and nothing from the hold-out states, then enters any feature. M1 and M2
+2024-06. Nothing after the training cut-off, and nothing from the hold-out states, then enters the house-price index. M1 and M2
 were refitted with the same design, sample draw and early stopping, and scored on every split.
 
 | Cause, split | Logit AUC, published / as-of | Logit predicted ÷ actual, published / as-of | LightGBM predicted ÷ actual, published / as-of |

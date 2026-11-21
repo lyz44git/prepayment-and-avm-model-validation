@@ -27,7 +27,7 @@ for a, c in zip(axs, ["MdAPE", "PPE10"]):
         a.text(v + 0.6, y, f"{v:.1f}", va="center", fontsize=8, color=fs.INK)
     a.grid(axis="y", visible=False)
 axs[0].set_title("Champions (orange), baselines (gray), challengers (blue): out-of-time")
-fs.note(fig, "Identical rows: 419,615 sales 2024-07..2025-08 where all four vendor values exist; models trained on sales <= 2024-03 with "
+fs.note(fig, "419,615 sales 2024-07..2025-08 where all four vendor values exist (the prior-sale index model B0 covers 58% of them); models trained on sales <= 2024-03 with "
              "features dated <= 2022-04 and a market index frozen at 2024-06. Vendor B is anchored to the sale itself (not a valid benchmark).")
 fig.savefig(O / "fig2_champion_challenger.png"); plt.close(fig)
 # F3 MdAPE by price tier
@@ -37,7 +37,7 @@ for k, n in enumerate(["Vendor A AVM (champion)", "Vendor A market value", "C1 L
     a.plot(tt.index, tt[n] * 100, marker="o", ms=4, color=S[k], label=n)
 a.set_xlabel("Within-state price decile (1 = lowest, 10 = highest)"); a.set_ylabel("Median absolute % error")
 a.set_xticks(range(1, 11)); a.legend(ncol=2); a.set_title("Accuracy by price tier (OOT)")
-fs.note(fig, "Top decile = the upmarket segment; bottom decile is dominated by non-standard / distressed resales for every estimator.")
+fs.note(fig, "Top decile = the upmarket segment; deciles are sorted on the realised sale price, so the bottom decile selects sales whose price fell below the estimates.")
 fig.savefig(O / "fig3_accuracy_by_tier.png"); plt.close(fig)
 # F4 within-tier disparity by tract minority share
 w = pd.read_csv(O / "disparity_minority_within_tier_oot.csv").set_index("estimator")
@@ -49,7 +49,7 @@ a.axhline(0, color=fs.INK2, lw=1, ls=":")
 a.set_xlabel("Tract Black + Hispanic population share quintile (Q1 lowest)"); a.set_ylabel("Value/price deviation within tier (%)")
 a.legend(); a.set_title("Valuation gap by neighbourhood composition, same price tier (OOT)")
 fs.note(fig, "Median log(value/price) per price decile x quintile, centred within decile, averaged over deciles. Race shares are never model "
-             "features; used only for this audit. Vendor A AVM: Q5-Q1 = -9.1%; challenger blend: -2.0%.")
+             "features; used only for this audit. Vendor A AVM: Q5-Q1 = -9.1 log points (about -8.7%); challenger blend: -2.0 log points.")
 fig.savefig(O / "fig4_disparity_within_tier.png"); plt.close(fig)
 # F5 drift
 d = pd.read_csv(O / "oot_monthly_MdAPE.csv", index_col=0)

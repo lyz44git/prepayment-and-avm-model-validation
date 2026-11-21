@@ -74,7 +74,7 @@ the work. It describes the work only by its stated aim or main finding and does 
 
 ## Estimation and inference methods
 
-- Romano, Yaniv, Evan Patterson, and Emmanuel J. Candès. 2019. "Conformalized Quantile Regression." In *Advances in Neural Information Processing Systems 32*, 3543–53. Red Hook, NY: Curran Associates. https://proceedings.neurips.cc/paper/2019/hash/5103c3584b063c431bd1268e9b5e76fb-Abstract.html.
+- Romano, Yaniv, Evan Patterson, and Emmanuel J. Candès. 2019. "Conformalized Quantile Regression." In *Advances in Neural Information Processing Systems 32*, 3520–30. Red Hook, NY: Curran Associates. https://proceedings.neurips.cc/paper/2019/hash/5103c3584b063c431bd1268e9b5e76fb-Abstract.html.
   — Conformal calibration of quantile-regression intervals. Its coverage guarantee assumes the calibration and test
   data are exchangeable, so out of time and out of state only the measured coverage counts.
 - Cameron, A. Colin, Jonah B. Gelbach, and Douglas L. Miller. 2011. "Robust Inference with Multiway Clustering." *Journal of Business & Economic Statistics* 29 (2): 238–49. https://doi.org/10.1198/jbes.2010.07136.
@@ -106,7 +106,7 @@ the work. It describes the work only by its stated aim or main finding and does 
   structure.
 - Financial Accounting Standards Board. 2016. *Financial Instruments—Credit Losses (Topic 326): Measurement of Credit Losses on Financial Instruments*. Accounting Standards Update 2016-13. Norwalk, CT: Financial Accounting Standards Board.
   — The current expected credit loss (CECL) standard behind the lifetime-loss framing.
-- Board of Governors of the Federal Reserve System, Federal Deposit Insurance Corporation, National Credit Union Administration, and Office of the Comptroller of the Currency. 2023. "Interagency Policy Statement on Allowances for Credit Losses (Revised April 2023)." *Federal Register* 88 (April 27): 25479–88. https://www.federalregister.gov/documents/2023/04/27/2023-08876/interagency-policy-statement-on-allowances-for-credit-losses-revised-april-2023.
+- Office of the Comptroller of the Currency, Board of Governors of the Federal Reserve System, Federal Deposit Insurance Corporation, and National Credit Union Administration. 2023. "Interagency Policy Statement on Allowances for Credit Losses (Revised April 2023)." *Federal Register* 88, no. 81 (April 27, 2023): 25479–88. https://www.federalregister.gov/documents/2023/04/27/2023-08876/interagency-policy-statement-on-allowances-for-credit-losses-revised-april-2023.
   — Beyond the reasonable and supportable forecast period, estimates revert to historical loss information or a proxy.
   The policy statement does not prescribe a four-quarter reversion; that choice, and reverting the macro inputs rather
   than the losses, are this study's assumptions.
